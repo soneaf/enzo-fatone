@@ -3,206 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enzo Fatone | Class of 2027</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <title>Enzo Fatone</title>
     <style>
-        :root { --accent: #e03e2f; --bg: #1a1a1a; --text: #eee; }
+        body { margin: 0; padding: 0; background: #111; color: #fff; font-family: 'Arial', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; }
+        h1 { font-size: 3rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
+        p { color: #888; margin-bottom: 40px; }
         
-        /* ADJUSTED PADDING: Reduced from 300px to 240px to remove gap */
-        body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; padding-top: 240px; padding-bottom: 100px; }
-        
-        /* STICKY HEADER WRAPPER */
-        .sticky-wrapper { position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-
-        /* 1. TOP VITALS STRIP */
-        .vitals { background: var(--accent); color: #fff; text-align: center; padding: 8px; font-size: 11px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; }
-
-        /* 2. HERO SECTION */
-        .hero { background: #222; padding: 20px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 20px; border-bottom: 1px solid #2a2a2a; }
-        h1 { font-size: 32px; font-weight: 900; margin: 0; text-transform: uppercase; letter-spacing: 1px; line-height: 1; }
-        .subhead { font-size: 14px; font-weight: 300; color: #ccc; margin: 0; }
-        
-        .btn-contact-sm { display: inline-block; background: var(--accent); color: #fff; padding: 8px 20px; text-decoration: none; font-weight: bold; border-radius: 50px; font-size: 11px; text-transform: uppercase; margin-left: 15px; }
-        .btn-contact-sm:hover { background: #fff; color: #000; }
-
-        /* 3. STATS STRIP */
-        .stats-strip { display: flex; justify-content: center; gap: 40px; background: #222; padding: 15px 25px 25px 25px; flex-wrap: wrap; border-bottom: 4px solid var(--accent); }
-        .stat-box { text-align: center; }
-        .stat-val { font-size: 42px; font-weight: 700; line-height: 1; }
-        .stat-label { font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; letter-spacing: 1px; margin-top: 5px; }
-
-        /* CONTENT */
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; } /* Reduced top padding */
-        
-        /* Adjusted margins to remove gap */
-        .section-header { border-left: 5px solid var(--accent); padding-left: 15px; margin: 20px 0 30px 0; text-transform: uppercase; font-size: 24px; font-weight: 900; color: #fff; }
-        .section-header:first-child { margin-top: 10px; } /* Tighten first header */
-        
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; }
-        
-        .video-card { background: #222; border-radius: 8px; overflow: hidden; border: 1px solid #333; transition: transform 0.2s; }
-        .video-card:hover { transform: translateY(-5px); border-color: var(--accent); }
-        .vid-wrapper { position: relative; padding-bottom: 56.25%; height: 0; background: #000; }
-        .vid-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-
-        /* FOOTER */
-        .footer { 
-            position: fixed; bottom: 0; left: 0; width: 100%; 
-            background: #111; border-top: 1px solid #333; 
-            padding: 12px 20px; z-index: 1000; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
-        }
-        
-        .footer-content { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; justify-content: center; }
-        
-        .footer-info { font-size: 12px; color: #aaa; font-weight: 500; }
-        .footer-info span { margin: 0 8px; color: #444; }
-        .footer-info a { color: #fff; text-decoration: none; transition: 0.2s; }
-        .footer-info a:hover { color: var(--accent); }
-        
-        .social-icons { display: flex; gap: 15px; }
-        .social-icon svg { width: 18px; height: 18px; fill: #888; transition: 0.2s; }
-        .social-icon:hover svg { fill: var(--accent); transform: scale(1.1); }
-        
-        .copyright { font-size: 9px; color: #444; margin-top: 10px; }
-
-        @media(max-width: 768px) { 
-            body { padding-top: 340px; padding-bottom: 140px; }
-            .hero { flex-direction: column; gap: 10px; padding: 15px; }
-            h1 { font-size: 24px; }
-            .btn-contact-sm { margin: 0; }
-            .stats-strip { gap: 20px; padding: 15px; }
-            .stat-val { font-size: 28px; }
-            .footer-content { flex-direction: column; gap: 10px; }
-        }
-        
-        @media(min-width: 769px) {
-            .footer { flex-direction: row; justify-content: center; height: 50px; }
-            .copyright { position: absolute; left: 40px; bottom: 18px; margin: 0; }
-        }
+        .menu { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+        .card { background: #222; border: 1px solid #333; padding: 40px; width: 200px; text-decoration: none; color: #fff; border-radius: 8px; transition: 0.2s; }
+        .card:hover { border-color: #e03e2f; transform: translateY(-5px); }
+        .card-title { font-size: 1.2rem; font-weight: bold; text-transform: uppercase; display: block; margin-top: 10px; }
+        .icon { font-size: 30px; }
     </style>
 </head>
 <body>
-
-    <div class="sticky-wrapper">
-        <div class="vitals">PG/SG &nbsp;|&nbsp; 6'2" &nbsp;|&nbsp; 185 LBS &nbsp;|&nbsp; CLASS OF 2027 &nbsp;|&nbsp; MONTVERDE ACADEMY</div>
+    <div>
+        <h1>Enzo Fatone</h1>
+        <p>Select a profile to view</p>
         
-        <div class="hero">
-            <div>
-                <h1>Enzo Fatone</h1>
-                <div class="subhead">Student-Athlete | Class of 2027</div>
-            </div>
-            <a href="mailto:enzo.fatone4@gmail.com" class="btn-contact-sm">Contact Recruiting</a>
-        </div>
+        <div class="menu">
+            <a href="/basketball" class="card">
+                <div class="icon">🏀</div>
+                <span class="card-title">Basketball</span>
+            </a>
 
-        <div class="stats-strip">
-            <div class="stat-box"><div class="stat-val" id="valPPG">--</div><div class="stat-label">PPG</div></div>
-            <div class="stat-box"><div class="stat-val" id="valRPG">--</div><div class="stat-label">RPG</div></div>
-            <div class="stat-box"><div class="stat-val" id="valAPG">--</div><div class="stat-label">APG</div></div>
-            <div class="stat-box"><div class="stat-val" id="valGPA" style="color: var(--accent)">--</div><div class="stat-label">GPA</div></div>
+            <a href="#" class="card" style="opacity:0.5; cursor: default;">
+                <div class="icon">🎓</div>
+                <span class="card-title">Academics</span>
+            </a>
         </div>
     </div>
-
-    <div id="dynamic-content" class="container"></div>
-
-    <div class="footer">
-        <div class="copyright">© 2026 Enzo Fatone Recruiting.</div>
-        
-        <div class="footer-content">
-            <div class="social-icons">
-                <a href="https://www.youtube.com/@EnzoFatone" target="_blank" class="social-icon" title="YouTube"><svg viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></a>
-                <a href="https://www.instagram.com/enz0_4f/" target="_blank" class="social-icon" title="Instagram"><svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg></a>
-                <a href="https://x.com/FatoneEnzo" target="_blank" class="social-icon" title="X"><svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
-            </div>
-            <div class="footer-info">
-                <a href="tel:4074485468">407-448-5468</a>
-                <span>•</span>
-                <a href="mailto:enzo.fatone4@gmail.com">enzo.fatone4@gmail.com</a>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // 1. CONFIG: Stats Sheet
-        const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQb1YB-uyLn2VrHG5h3J1SBW7A9s2D3aMeMBu2O4to5Vl9ji2lKBlZbPpMctwRJqpzM1i7NljvmqOAQ/pub?gid=802078904&single=true&output=csv";
-
-        // 2. PARAMS & THEME
-        const params = new URLSearchParams(window.location.search);
-        const themeColor = params.get('theme');
-        if (themeColor) { document.documentElement.style.setProperty('--accent', '#' + themeColor); }
-
-        // 3. VIDEO PARSER
-        function getEmbedUrl(link) {
-            if (!link) return null;
-            if (link.includes('youtube.com') || link.includes('youtu.be')) {
-                let vidId = '';
-                if (link.includes('v=')) vidId = link.split('v=')[1].split('&')[0];
-                else if (link.includes('youtu.be/')) vidId = link.split('youtu.be/')[1];
-                return `https://www.youtube.com/embed/${vidId}`;
-            }
-            if (link.includes('drive.google.com')) {
-                const parts = link.split('/d/');
-                if (parts.length > 1) {
-                    const id = parts[1].split('/')[0];
-                    return `https://drive.google.com/file/d/${id}/preview`;
-                }
-            }
-            return null;
-        }
-
-        // 4. DYNAMIC RENDERER
-        const contentDiv = document.getElementById('dynamic-content');
-        const rawData = params.get('data');
-
-        if (rawData) {
-            try {
-                const categories = JSON.parse(decodeURIComponent(rawData));
-                categories.forEach(cat => {
-                    if(cat.links.length > 0) {
-                        const h2 = document.createElement('h2');
-                        h2.className = 'section-header';
-                        h2.innerText = cat.name;
-                        contentDiv.appendChild(h2);
-
-                        const grid = document.createElement('div');
-                        grid.className = 'grid';
-
-                        cat.links.forEach(link => {
-                            const embed = getEmbedUrl(link);
-                            if(embed) {
-                                grid.innerHTML += `
-                                <div class="video-card">
-                                    <div class="vid-wrapper">
-                                        <iframe src="${embed}" frameborder="0" allowfullscreen></iframe>
-                                    </div>
-                                </div>`;
-                            }
-                        });
-                        contentDiv.appendChild(grid);
-                    }
-                });
-            } catch (e) {
-                contentDiv.innerHTML = "<p style='text-align:center; color:#666;'>Error loading video data.</p>";
-            }
-        } else {
-            contentDiv.innerHTML = "<p style='text-align:center; color:#666; padding:50px;'>No videos loaded. Use the Recruiting Tool to launch this page.</p>";
-        }
-
-        // 5. LOAD STATS
-        async function loadStats() {
-            try {
-                const res = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(SHEET_URL));
-                const csv = await res.text();
-                const dataRow = csv.split(/\r?\n/).filter(r => r.trim() !== "")[1].split(',').map(item => item.replace(/"/g, '').trim());
-                let start = dataRow[0] === "2" ? 1 : 0;
-                document.getElementById('valPPG').innerText = dataRow[start];
-                document.getElementById('valRPG').innerText = dataRow[start+1];
-                document.getElementById('valAPG').innerText = dataRow[start+2];
-                document.getElementById('valGPA').innerText = dataRow[start+3];
-            } catch (e) { }
-        }
-        loadStats();
-    </script>
 </body>
 </html>
