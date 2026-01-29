@@ -3,33 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enzo Fatone | Class of 2027 | Highlights</title>
+    <title>Enzo Fatone | Class of 2027</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700;900&display=swap" rel="stylesheet">
     <style>
         :root { --accent: #e03e2f; --bg: #1a1a1a; --text: #eee; }
         body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
         
-        .hero { background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=2090&auto=format&fit=crop'); background-size: cover; background-position: center; padding: 80px 20px; text-align: center; border-bottom: 4px solid var(--accent); }
+        .hero { background: #222; padding: 80px 20px; text-align: center; border-bottom: 4px solid var(--accent); }
         h1 { font-size: 48px; font-weight: 900; margin: 0; text-transform: uppercase; letter-spacing: 2px; }
         .subhead { font-size: 18px; font-weight: 300; margin-top: 10px; color: #ccc; }
         
-        .stats-strip { display: flex; justify-content: center; gap: 40px; background: #222; padding: 25px; flex-wrap: wrap; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .stats-strip { display: flex; justify-content: center; gap: 40px; background: #2a2a2a; padding: 25px; flex-wrap: wrap; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .stat-box { text-align: center; }
         .stat-val { font-size: 42px; font-weight: 700; line-height: 1; }
         .stat-label { font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; letter-spacing: 1px; margin-top: 5px; }
 
         .vitals { background: var(--accent); color: #fff; text-align: center; padding: 12px; font-size: 13px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; }
 
-        .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+        /* DYNAMIC SECTIONS */
+        .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+        .section-header { border-left: 5px solid var(--accent); padding-left: 15px; margin: 50px 0 30px 0; text-transform: uppercase; font-size: 24px; font-weight: 900; color: #fff; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; }
         
-        .video-card { background: #222; border-radius: 8px; overflow: hidden; border: 1px solid #333; transition: transform 0.2s; display: flex; flex-direction: column; }
+        .video-card { background: #222; border-radius: 8px; overflow: hidden; border: 1px solid #333; transition: transform 0.2s; }
         .video-card:hover { transform: translateY(-5px); border-color: var(--accent); }
-        .vid-wrapper { position: relative; padding-bottom: 56.25%; /* 16:9 */ height: 0; background: #000; }
+        .vid-wrapper { position: relative; padding-bottom: 56.25%; height: 0; background: #000; }
         .vid-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-        .vid-info { padding: 15px; background: #2a2a2a; flex: 1; display: flex; flex-direction: column; justify-content: center; }
-        .vid-title { font-weight: 700; font-size: 16px; color: #fff; margin-bottom: 4px; }
-        .vid-type { font-size: 11px; text-transform: uppercase; color: var(--accent); font-weight: bold; }
 
         .footer { text-align: center; padding: 40px; color: #666; font-size: 12px; border-top: 1px solid #333; margin-top: 60px; }
         .btn-contact { display: inline-block; background: var(--accent); color: #fff; padding: 14px 35px; text-decoration: none; font-weight: bold; border-radius: 50px; margin-top: 25px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; transition: 0.2s; }
@@ -40,9 +39,7 @@
 </head>
 <body>
 
-    <div class="vitals">
-        PG/SG &nbsp;|&nbsp; 6'2" &nbsp;|&nbsp; 185 LBS &nbsp;|&nbsp; CLASS OF 2027 &nbsp;|&nbsp; MONTVERDE ACADEMY
-    </div>
+    <div class="vitals">PG/SG &nbsp;|&nbsp; 6'2" &nbsp;|&nbsp; 185 LBS &nbsp;|&nbsp; CLASS OF 2027 &nbsp;|&nbsp; MONTVERDE ACADEMY</div>
 
     <div class="hero">
         <h1>Enzo Fatone</h1>
@@ -57,99 +54,97 @@
         <div class="stat-box"><div class="stat-val" id="valGPA" style="color: var(--accent)">--</div><div class="stat-label">GPA</div></div>
     </div>
 
-    <div class="container">
-        <h2 style="border-left: 5px solid var(--accent); padding-left: 15px; margin-bottom: 30px; text-transform: uppercase; font-size: 20px;">Featured Highlights</h2>
-        
-        <div class="grid" id="videoGrid">
-            </div>
-    </div>
+    <div id="dynamic-content" class="container">
+        </div>
 
     <div class="footer">
         Enzo Fatone | Class of 2027 | <a href="mailto:enzo.fatone4@gmail.com" style="color:var(--accent); text-decoration: none;">enzo.fatone4@gmail.com</a>
     </div>
 
     <script>
-        // --- 1. CONFIGURATION ---
-        // Paste your published Google Sheet CSV link here
+        // 1. CONFIG: Stats Sheet
         const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQb1YB-uyLn2VrHG5h3J1SBW7A9s2D3aMeMBu2O4to5Vl9ji2lKBlZbPpMctwRJqpzM1i7NljvmqOAQ/pub?gid=802078904&single=true&output=csv";
 
-        // --- 2. PARSE URL PARAMETERS ---
+        // 2. PARAMS & THEME
         const params = new URLSearchParams(window.location.search);
-        
-        // Apply Color Theme
         const themeColor = params.get('theme');
         if (themeColor) { document.documentElement.style.setProperty('--accent', '#' + themeColor); }
 
-        // --- 3. VIDEO PARSER (YouTube & Drive) ---
+        // 3. VIDEO PARSER
         function getEmbedUrl(link) {
             if (!link) return null;
-            
-            // YouTube
             if (link.includes('youtube.com') || link.includes('youtu.be')) {
                 let vidId = '';
                 if (link.includes('v=')) vidId = link.split('v=')[1].split('&')[0];
                 else if (link.includes('youtu.be/')) vidId = link.split('youtu.be/')[1];
                 return `https://www.youtube.com/embed/${vidId}`;
             }
-            
-            // Google Drive
             if (link.includes('drive.google.com')) {
-                // Extract ID between /d/ and /view
                 const parts = link.split('/d/');
                 if (parts.length > 1) {
                     const id = parts[1].split('/')[0];
                     return `https://drive.google.com/file/d/${id}/preview`;
                 }
             }
-            return null; // Unsupported link
+            return null;
         }
 
-        // --- 4. RENDER VIDEOS ---
-        const grid = document.getElementById('videoGrid');
-        const v1 = getEmbedUrl(params.get('v1'));
-        const v2 = getEmbedUrl(params.get('v2'));
-        const v3 = getEmbedUrl(params.get('v3'));
-        
-        const videos = [
-            { url: v1, title: "Primary Highlight Reel", type: "Featured" },
-            { url: v2, title: "Game Tape / Skills", type: "Skill Breakdown" },
-            { url: v3, title: "Additional Footage", type: "Bonus Content" }
-        ];
+        // 4. DYNAMIC RENDERER
+        const contentDiv = document.getElementById('dynamic-content');
+        const rawData = params.get('data');
 
-        let hasVideo = false;
-        videos.forEach(vid => {
-            if (vid.url) {
-                hasVideo = true;
-                grid.innerHTML += `
-                <div class="video-card">
-                    <div class="vid-wrapper">
-                        <iframe src="${vid.url}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                    </div>
-                    <div class="vid-info">
-                        <div class="vid-type">${vid.type}</div>
-                        <div class="vid-title">${vid.title}</div>
-                    </div>
-                </div>`;
+        if (rawData) {
+            try {
+                // Decode the URL-safe JSON string
+                const categories = JSON.parse(decodeURIComponent(rawData));
+                
+                categories.forEach(cat => {
+                    if(cat.links.length > 0) {
+                        // Create Section Title
+                        const h2 = document.createElement('h2');
+                        h2.className = 'section-header';
+                        h2.innerText = cat.name;
+                        contentDiv.appendChild(h2);
+
+                        // Create Grid
+                        const grid = document.createElement('div');
+                        grid.className = 'grid';
+
+                        // Create Cards
+                        cat.links.forEach(link => {
+                            const embed = getEmbedUrl(link);
+                            if(embed) {
+                                grid.innerHTML += `
+                                <div class="video-card">
+                                    <div class="vid-wrapper">
+                                        <iframe src="${embed}" frameborder="0" allowfullscreen></iframe>
+                                    </div>
+                                </div>`;
+                            }
+                        });
+                        contentDiv.appendChild(grid);
+                    }
+                });
+
+            } catch (e) {
+                contentDiv.innerHTML = "<p style='text-align:center; color:#666;'>Error loading video data.</p>";
             }
-        });
-
-        if (!hasVideo) {
-            grid.innerHTML = `<p style="color:#666; grid-column: 1/-1; text-align:center;">No videos loaded. Use the Recruiting Tool to generate a link with video parameters.</p>`;
+        } else {
+            contentDiv.innerHTML = "<p style='text-align:center; color:#666; padding:50px;'>No videos loaded. Use the Recruiting Tool to launch this page.</p>";
         }
 
-        // --- 5. LOAD STATS ---
+        // 5. LOAD STATS
         async function loadStats() {
             try {
                 const res = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(SHEET_URL));
                 const csv = await res.text();
                 const dataRow = csv.split(/\r?\n/).filter(r => r.trim() !== "")[1].split(',').map(item => item.replace(/"/g, '').trim());
                 let start = dataRow[0] === "2" ? 1 : 0;
-                
                 document.getElementById('valPPG').innerText = dataRow[start];
                 document.getElementById('valRPG').innerText = dataRow[start+1];
                 document.getElementById('valAPG').innerText = dataRow[start+2];
                 document.getElementById('valGPA').innerText = dataRow[start+3];
-            } catch (e) { console.log("Stats error"); }
+            } catch (e) { }
         }
         loadStats();
     </script>
