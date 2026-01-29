@@ -8,8 +8,8 @@
     <style>
         :root { --accent: #e03e2f; --bg: #1a1a1a; --text: #eee; }
         
-        /* Adjusted padding to clear the taller sticky header */
-        body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; padding-top: 300px; padding-bottom: 100px; }
+        /* ADJUSTED PADDING: Reduced from 300px to 240px to remove gap */
+        body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; padding-top: 240px; padding-bottom: 100px; }
         
         /* STICKY HEADER WRAPPER */
         .sticky-wrapper { position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
@@ -25,15 +25,19 @@
         .btn-contact-sm { display: inline-block; background: var(--accent); color: #fff; padding: 8px 20px; text-decoration: none; font-weight: bold; border-radius: 50px; font-size: 11px; text-transform: uppercase; margin-left: 15px; }
         .btn-contact-sm:hover { background: #fff; color: #000; }
 
-        /* 3. STATS STRIP (Now inside Sticky Wrapper) */
+        /* 3. STATS STRIP */
         .stats-strip { display: flex; justify-content: center; gap: 40px; background: #222; padding: 15px 25px 25px 25px; flex-wrap: wrap; border-bottom: 4px solid var(--accent); }
         .stat-box { text-align: center; }
         .stat-val { font-size: 42px; font-weight: 700; line-height: 1; }
         .stat-label { font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; letter-spacing: 1px; margin-top: 5px; }
 
         /* CONTENT */
-        .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
-        .section-header { border-left: 5px solid var(--accent); padding-left: 15px; margin: 50px 0 30px 0; text-transform: uppercase; font-size: 24px; font-weight: 900; color: #fff; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; } /* Reduced top padding */
+        
+        /* Adjusted margins to remove gap */
+        .section-header { border-left: 5px solid var(--accent); padding-left: 15px; margin: 20px 0 30px 0; text-transform: uppercase; font-size: 24px; font-weight: 900; color: #fff; }
+        .section-header:first-child { margin-top: 10px; } /* Tighten first header */
+        
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; }
         
         .video-card { background: #222; border-radius: 8px; overflow: hidden; border: 1px solid #333; transition: transform 0.2s; }
@@ -41,39 +45,41 @@
         .vid-wrapper { position: relative; padding-bottom: 56.25%; height: 0; background: #000; }
         .vid-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 
-        /* STICKY FOOTER */
+        /* FOOTER */
         .footer { 
             position: fixed; bottom: 0; left: 0; width: 100%; 
             background: #111; border-top: 1px solid #333; 
-            padding: 10px 20px; z-index: 1000; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+            padding: 12px 20px; z-index: 1000; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
             box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
         }
+        
         .footer-content { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; justify-content: center; }
+        
         .footer-info { font-size: 12px; color: #aaa; font-weight: 500; }
         .footer-info span { margin: 0 8px; color: #444; }
         .footer-info a { color: #fff; text-decoration: none; transition: 0.2s; }
         .footer-info a:hover { color: var(--accent); }
+        
         .social-icons { display: flex; gap: 15px; }
         .social-icon svg { width: 18px; height: 18px; fill: #888; transition: 0.2s; }
         .social-icon:hover svg { fill: var(--accent); transform: scale(1.1); }
-        .copyright { font-size: 9px; color: #444; margin-top: 2px; }
+        
+        .copyright { font-size: 9px; color: #444; margin-top: 10px; }
 
         @media(max-width: 768px) { 
-            body { padding-top: 340px; padding-bottom: 120px; }
+            body { padding-top: 340px; padding-bottom: 140px; }
             .hero { flex-direction: column; gap: 10px; padding: 15px; }
             h1 { font-size: 24px; }
             .btn-contact-sm { margin: 0; }
             .stats-strip { gap: 20px; padding: 15px; }
             .stat-val { font-size: 28px; }
-            .footer { padding: 12px; }
-            .footer-content { flex-direction: column; gap: 8px; }
+            .footer-content { flex-direction: column; gap: 10px; }
         }
         
         @media(min-width: 769px) {
-            .footer { flex-direction: row; justify-content: space-between; padding: 10px 40px; }
-            .footer-content { flex-direction: row; }
-            .copyright { order: -1; }
+            .footer { flex-direction: row; justify-content: center; height: 50px; }
+            .copyright { position: absolute; left: 40px; bottom: 18px; margin: 0; }
         }
     </style>
 </head>
