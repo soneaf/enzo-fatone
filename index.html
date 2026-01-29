@@ -86,4 +86,99 @@
                 <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
             </a>
             <a href="https://x.com/FatoneEnzo" target="_blank" class="social-icon" title="X (Twitter)">
-                <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8
+                <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </a>
+        </div>
+        
+        <div class="footer-info">
+            <a href="tel:4074485468">407-448-5468</a>
+            <span>•</span>
+            <a href="mailto:enzo.fatone4@gmail.com">enzo.fatone4@gmail.com</a>
+        </div>
+        
+        <div>© 2026 Enzo Fatone Recruiting. All Rights Reserved.</div>
+    </div>
+
+    <script>
+        // 1. CONFIG: Stats Sheet
+        const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQb1YB-uyLn2VrHG5h3J1SBW7A9s2D3aMeMBu2O4to5Vl9ji2lKBlZbPpMctwRJqpzM1i7NljvmqOAQ/pub?gid=802078904&single=true&output=csv";
+
+        // 2. PARAMS & THEME
+        const params = new URLSearchParams(window.location.search);
+        const themeColor = params.get('theme');
+        if (themeColor) { document.documentElement.style.setProperty('--accent', '#' + themeColor); }
+
+        // 3. VIDEO PARSER
+        function getEmbedUrl(link) {
+            if (!link) return null;
+            if (link.includes('youtube.com') || link.includes('youtu.be')) {
+                let vidId = '';
+                if (link.includes('v=')) vidId = link.split('v=')[1].split('&')[0];
+                else if (link.includes('youtu.be/')) vidId = link.split('youtu.be/')[1];
+                return `https://www.youtube.com/embed/${vidId}`;
+            }
+            if (link.includes('drive.google.com')) {
+                const parts = link.split('/d/');
+                if (parts.length > 1) {
+                    const id = parts[1].split('/')[0];
+                    return `https://drive.google.com/file/d/${id}/preview`;
+                }
+            }
+            return null;
+        }
+
+        // 4. DYNAMIC RENDERER
+        const contentDiv = document.getElementById('dynamic-content');
+        const rawData = params.get('data');
+
+        if (rawData) {
+            try {
+                const categories = JSON.parse(decodeURIComponent(rawData));
+                categories.forEach(cat => {
+                    if(cat.links.length > 0) {
+                        const h2 = document.createElement('h2');
+                        h2.className = 'section-header';
+                        h2.innerText = cat.name;
+                        contentDiv.appendChild(h2);
+
+                        const grid = document.createElement('div');
+                        grid.className = 'grid';
+
+                        cat.links.forEach(link => {
+                            const embed = getEmbedUrl(link);
+                            if(embed) {
+                                grid.innerHTML += `
+                                <div class="video-card">
+                                    <div class="vid-wrapper">
+                                        <iframe src="${embed}" frameborder="0" allowfullscreen></iframe>
+                                    </div>
+                                </div>`;
+                            }
+                        });
+                        contentDiv.appendChild(grid);
+                    }
+                });
+            } catch (e) {
+                contentDiv.innerHTML = "<p style='text-align:center; color:#666;'>Error loading video data.</p>";
+            }
+        } else {
+            contentDiv.innerHTML = "<p style='text-align:center; color:#666; padding:50px;'>No videos loaded. Use the Recruiting Tool to launch this page.</p>";
+        }
+
+        // 5. LOAD STATS
+        async function loadStats() {
+            try {
+                const res = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(SHEET_URL));
+                const csv = await res.text();
+                const dataRow = csv.split(/\r?\n/).filter(r => r.trim() !== "")[1].split(',').map(item => item.replace(/"/g, '').trim());
+                let start = dataRow[0] === "2" ? 1 : 0;
+                document.getElementById('valPPG').innerText = dataRow[start];
+                document.getElementById('valRPG').innerText = dataRow[start+1];
+                document.getElementById('valAPG').innerText = dataRow[start+2];
+                document.getElementById('valGPA').innerText = dataRow[start+3];
+            } catch (e) { }
+        }
+        loadStats();
+    </script>
+</body>
+</html>
