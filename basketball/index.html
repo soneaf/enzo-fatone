@@ -57,10 +57,10 @@
             <a href="mailto:enzo.fatone4@gmail.com" class="btn-contact-sm">Contact Recruiting</a>
         </div>
         <div class="stats-strip">
-            <div class="stat-box"><div class="stat-val" id="valPPG">--</div><div class="stat-label">PPG</div></div>
-            <div class="stat-box"><div class="stat-val" id="valRPG">--</div><div class="stat-label">RPG</div></div>
-            <div class="stat-box"><div class="stat-val" id="valAPG">--</div><div class="stat-label">APG</div></div>
-            <div class="stat-box"><div class="stat-val" id="valGPA" style="color: var(--accent)">--</div><div class="stat-label">GPA</div></div>
+            <div class="stat-box"><div class="stat-val" id="valPPG">18.5</div><div class="stat-label">PPG</div></div>
+            <div class="stat-box"><div class="stat-val" id="valRPG">6.2</div><div class="stat-label">RPG</div></div>
+            <div class="stat-box"><div class="stat-val" id="valAPG">4.0</div><div class="stat-label">APG</div></div>
+            <div class="stat-box"><div class="stat-val" id="valGPA" style="color: var(--accent)">3.8</div><div class="stat-label">GPA</div></div>
         </div>
     </div>
     
@@ -96,7 +96,6 @@
         ];
         // -----------------------------------------------------
 
-        const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQb1YB-uyLn2VrHG5h3J1SBW7A9s2D3aMeMBu2O4to5Vl9ji2lKBlZbPpMctwRJqpzM1i7NljvmqOAQ/pub?gid=802078904&single=true&output=csv";
         const params = new URLSearchParams(window.location.search);
         
         // Theme Logic
@@ -156,9 +155,6 @@
         } else {
             contentDiv.innerHTML = "<p style='text-align:center; color:#666; padding:50px;'>No videos loaded.</p>";
         }
-
-        async function loadStats() { try { const res = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(SHEET_URL)); const csv = await res.text(); const dataRow = csv.split(/\r?\n/).filter(r => r.trim() !== "")[1].split(',').map(item => item.replace(/"/g, '').trim()); let start = dataRow[0] === "2" ? 1 : 0; document.getElementById('valPPG').innerText = dataRow[start]; document.getElementById('valRPG').innerText = dataRow[start+1]; document.getElementById('valAPG').innerText = dataRow[start+2]; document.getElementById('valGPA').innerText = dataRow[start+3]; } catch (e) { } }
-        loadStats();
     </script>
 </body>
 </html>
