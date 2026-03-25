@@ -313,6 +313,128 @@
             white-space: nowrap;
         }
 
+        /* ── Collapsible Stats ── */
+        .stats-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+            border-left: 5px solid var(--gold);
+            padding: 12px 16px;
+            margin: 30px 0 0;
+            background: var(--card);
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+            border-left: 5px solid var(--gold);
+            transition: border-color 0.2s;
+        }
+
+        .stats-toggle:hover {
+            border-color: var(--gold);
+        }
+
+        .stats-toggle-title {
+            text-transform: uppercase;
+            font-size: 22px;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+
+        .stats-toggle-arrow {
+            font-size: 18px;
+            color: var(--gold);
+            transition: transform 0.3s;
+        }
+
+        .stats-toggle.open .stats-toggle-arrow {
+            transform: rotate(180deg);
+        }
+
+        .stats-panel {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out;
+        }
+
+        .stats-panel.open {
+            max-height: 2000px;
+            transition: max-height 0.6s ease-in;
+        }
+
+        .stats-table-wrapper {
+            overflow-x: auto;
+            margin: 16px 0 24px;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+        }
+
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .stats-table thead {
+            background: var(--navy);
+        }
+
+        .stats-table th {
+            padding: 10px 14px;
+            text-align: center;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--gold);
+            border-bottom: 2px solid var(--gold);
+        }
+
+        .stats-table th:first-child {
+            text-align: left;
+        }
+
+        .stats-table td {
+            padding: 10px 14px;
+            text-align: center;
+            color: var(--text);
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .stats-table td:first-child {
+            text-align: left;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .stats-table tbody tr {
+            background: var(--card);
+            transition: background 0.15s;
+        }
+
+        .stats-table tbody tr:hover {
+            background: var(--navy-light);
+        }
+
+        .stats-table tfoot {
+            background: var(--navy);
+        }
+
+        .stats-table tfoot td {
+            font-weight: 800;
+            color: var(--gold);
+            border-top: 2px solid var(--gold);
+            border-bottom: none;
+        }
+
+        .stats-loading {
+            text-align: center;
+            padding: 30px;
+            color: var(--muted);
+        }
+
         /* ── Footer ── */
         .footer {
             position: fixed;
@@ -392,6 +514,18 @@
     <div class="container">
         <div id="videos-section">
             <p class="loading-msg"><div class="spinner"></div>Loading game film...</p>
+        </div>
+
+        <div id="stats-section">
+            <div class="stats-toggle" onclick="toggleStats()">
+                <span class="stats-toggle-title">Season Stats</span>
+                <span class="stats-toggle-arrow">&#9660;</span>
+            </div>
+            <div class="stats-panel" id="stats-panel">
+                <div id="stats-table-container">
+                    <p class="stats-loading"><div class="spinner"></div>Loading stats...</p>
+                </div>
+            </div>
         </div>
 
         <div id="schedule-section" class="fade-in" style="display:none;"></div>
@@ -532,6 +666,117 @@
             }
         }
 
+        // ── Toggle Stats Panel ──
+        function toggleStats() {
+            const toggle = document.querySelector('.stats-toggle');
+            const panel = document.getElementById('stats-panel');
+            toggle.classList.toggle('open');
+            panel.classList.toggle('open');
+        }
+
+        // ── Load Full Stats Table from Google Sheets ──
+        async function loadFullStats() {
+            const container = document.getElementById('stats-table-container');
+            try {
+                const resp = await fetch(SHEETS_URL);
+                const text = await resp.text();
+                const json = JSON.parse(text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1));
+                const rows = json.table.rows;
+                const cols = json.table.cols;
+                const headers = cols.map(c => (c.label || '').toString().trim());
+
+                // Columns we want to display
+                const displayCols = [
+                    { key: 'Date', label: 'Date' },
+                    { key: 'Opponent', label: 'OPP', alt: 'Game/Event' },
+                    { key: 'Result', label: 'W/L' },
+                    { key: 'PTS', label: 'PTS', alt: 'Points' },
+                    { key: 'FGM', label: 'FGM' },
+                    { key: 'FGA', label: 'FGA' },
+                    { key: 'FG%', label: 'FG%' },
+                    { key: '3PM', label: '3PM' },
+                    { key: '3PA', label: '3PA' },
+                    { key: '3P%', label: '3P%' },
+                    { key: 'FTM', label: 'FTM' },
+                    { key: 'FTA', label: 'FTA' },
+                    { key: 'REB', label: 'REB', alt: 'Rebounds' },
+                    { key: 'AST', label: 'AST', alt: 'Assists' },
+                    { key: 'STL', label: 'STL', alt: 'Steals' },
+                    { key: 'BLK', label: 'BLK', alt: 'Blocks' },
+                    { key: 'TOV', label: 'TO', alt: 'TO' },
+                ];
+
+                // Map display cols to actual column indices
+                const colMap = displayCols.map(dc => {
+                    let idx = headers.findIndex(h => h === dc.key);
+                    if (idx === -1 && dc.alt) idx = headers.findIndex(h => h === dc.alt);
+                    return { ...dc, idx };
+                }).filter(dc => dc.idx !== -1);
+
+                if (colMap.length === 0) throw new Error('No matching columns found');
+
+                // Build table
+                let html = '<div class="stats-table-wrapper"><table class="stats-table"><thead><tr>';
+                colMap.forEach(c => { html += `<th>${c.label}</th>`; });
+                html += '</tr></thead><tbody>';
+
+                // Track totals for averaging
+                const numericCols = ['PTS','FGM','FGA','3PM','3PA','FTM','FTA','REB','AST','STL','BLK','TOV','TO'];
+                const totals = {};
+                colMap.forEach(c => { if (numericCols.includes(c.key) || numericCols.includes(c.alt)) totals[c.key] = 0; });
+                let gameCount = 0;
+
+                rows.forEach(row => {
+                    html += '<tr>';
+                    let hasData = false;
+                    colMap.forEach(c => {
+                        const cell = row.c[c.idx];
+                        let val = cell ? (cell.f || cell.v || '') : '';
+                        if (val === null || val === undefined) val = '';
+
+                        // Track numeric totals
+                        if (totals.hasOwnProperty(c.key) && cell && cell.v != null) {
+                            const num = parseFloat(cell.v);
+                            if (!isNaN(num)) { totals[c.key] += num; hasData = true; }
+                        }
+
+                        html += `<td>${val}</td>`;
+                    });
+                    if (hasData) gameCount++;
+                    html += '</tr>';
+                });
+
+                // Averages row
+                if (gameCount > 0) {
+                    html += '</tbody><tfoot><tr>';
+                    colMap.forEach(c => {
+                        if (c.key === 'Date') { html += `<td>AVG</td>`; }
+                        else if (c.key === 'Opponent' || c.key === 'Result') { html += '<td></td>'; }
+                        else if (c.key === 'FG%' || c.key === '3P%') {
+                            // Calculate percentage from totals
+                            const madeKey = c.key === 'FG%' ? 'FGM' : '3PM';
+                            const attKey = c.key === 'FG%' ? 'FGA' : '3PA';
+                            const made = totals[madeKey] || 0;
+                            const att = totals[attKey] || 0;
+                            html += `<td>${att > 0 ? (made/att*100).toFixed(1) + '%' : '—'}</td>`;
+                        }
+                        else if (totals.hasOwnProperty(c.key)) {
+                            html += `<td>${(totals[c.key] / gameCount).toFixed(1)}</td>`;
+                        }
+                        else { html += '<td></td>'; }
+                    });
+                    html += '</tr></tfoot>';
+                }
+
+                html += '</table></div>';
+                container.innerHTML = html;
+
+            } catch (err) {
+                console.warn('Could not load full stats:', err);
+                container.innerHTML = '<p class="stats-loading">Stats unavailable</p>';
+            }
+        }
+
         // ── Upcoming Tournaments ──
         // Only shows tournaments that haven't passed yet.
         const TOURNAMENTS = [
@@ -591,6 +836,7 @@
         // ── Initialize ──
         loadVideos();
         loadStats();
+        loadFullStats();
         loadSchedule();
     </script>
 </body>
