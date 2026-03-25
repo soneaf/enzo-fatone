@@ -313,14 +313,13 @@
             white-space: nowrap;
         }
 
-        /* ── Collapsible Stats ── */
-        .stats-toggle {
+        /* ── Collapsible Sections ── */
+        .collapsible-toggle {
             display: flex;
             align-items: center;
             justify-content: space-between;
             cursor: pointer;
             user-select: none;
-            border-left: 5px solid var(--gold);
             padding: 12px 16px;
             margin: 30px 0 0;
             background: var(--card);
@@ -330,11 +329,11 @@
             transition: border-color 0.2s;
         }
 
-        .stats-toggle:hover {
+        .collapsible-toggle:hover {
             border-color: var(--gold);
         }
 
-        .stats-toggle-title {
+        .collapsible-title {
             text-transform: uppercase;
             font-size: 22px;
             font-weight: 900;
@@ -342,24 +341,24 @@
             letter-spacing: 1px;
         }
 
-        .stats-toggle-arrow {
+        .collapsible-arrow {
             font-size: 18px;
             color: var(--gold);
             transition: transform 0.3s;
         }
 
-        .stats-toggle.open .stats-toggle-arrow {
+        .collapsible-toggle.open .collapsible-arrow {
             transform: rotate(180deg);
         }
 
-        .stats-panel {
+        .collapsible-panel {
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.4s ease-out;
         }
 
-        .stats-panel.open {
-            max-height: 2000px;
+        .collapsible-panel.open {
+            max-height: 3000px;
             transition: max-height 0.6s ease-in;
         }
 
@@ -517,18 +516,18 @@
         </div>
 
         <div id="stats-section">
-            <div class="stats-toggle" onclick="toggleStats()">
-                <span class="stats-toggle-title">Season Stats</span>
-                <span class="stats-toggle-arrow">&#9660;</span>
+            <div class="collapsible-toggle" onclick="togglePanel('stats-panel', this)">
+                <span class="collapsible-title">Season Stats</span>
+                <span class="collapsible-arrow">&#9660;</span>
             </div>
-            <div class="stats-panel" id="stats-panel">
+            <div class="collapsible-panel" id="stats-panel">
                 <div id="stats-table-container">
                     <p class="stats-loading"><div class="spinner"></div>Loading stats...</p>
                 </div>
             </div>
         </div>
 
-        <div id="schedule-section" class="fade-in" style="display:none;"></div>
+        <div id="schedule-section" style="display:none;"></div>
     </div>
 
     <div class="footer">
@@ -666,11 +665,10 @@
             }
         }
 
-        // ── Toggle Stats Panel ──
-        function toggleStats() {
-            const toggle = document.querySelector('.stats-toggle');
-            const panel = document.getElementById('stats-panel');
-            toggle.classList.toggle('open');
+        // ── Toggle Collapsible Panel ──
+        function togglePanel(panelId, toggleEl) {
+            const panel = document.getElementById(panelId);
+            toggleEl.classList.toggle('open');
             panel.classList.toggle('open');
         }
 
@@ -810,7 +808,13 @@
             if (upcoming.length === 0) return;
 
             section.style.display = 'block';
-            let html = '<h2 class="section-header">Upcoming Tournaments</h2><div class="schedule-list">';
+            let html = `
+                <div class="collapsible-toggle" onclick="togglePanel('schedule-panel', this)">
+                    <span class="collapsible-title">Upcoming Tournaments</span>
+                    <span class="collapsible-arrow">&#9660;</span>
+                </div>
+                <div class="collapsible-panel" id="schedule-panel">
+                    <div class="schedule-list" style="padding-top:12px;">`;
 
             upcoming.forEach(t => {
                 const lpClass = t.livePeriod ? ' live-period' : '';
@@ -829,7 +833,7 @@
                     </div>`;
             });
 
-            html += '</div>';
+            html += '</div></div>';
             section.innerHTML = html;
         }
 
