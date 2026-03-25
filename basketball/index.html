@@ -210,8 +210,107 @@
         .loading-msg {
             text-align: center;
             color: var(--muted);
-            padding: 40px;
+            padding: 60px 40px;
             font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── Loading Spinner ── */
+        .spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid var(--card-border);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-out both;
+        }
+
+        /* ── Tournament Schedule ── */
+        .schedule-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .schedule-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 16px 20px;
+            transition: border-color 0.2s;
+        }
+
+        .schedule-card:hover {
+            border-color: var(--gold);
+        }
+
+        .schedule-card.live-period {
+            border-left: 4px solid var(--gold);
+        }
+
+        .schedule-date {
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .schedule-month {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--gold);
+            letter-spacing: 1.5px;
+        }
+
+        .schedule-days {
+            font-size: 22px;
+            font-weight: 900;
+            line-height: 1.1;
+            color: #fff;
+        }
+
+        .schedule-details {
+            flex: 1;
+        }
+
+        .schedule-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 3px;
+        }
+
+        .schedule-location {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .schedule-badge {
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--navy-dark);
+            background: var(--gold);
+            padding: 3px 10px;
+            border-radius: 50px;
+            white-space: nowrap;
         }
 
         /* ── Footer ── */
@@ -292,8 +391,10 @@
 
     <div class="container">
         <div id="videos-section">
-            <p class="loading-msg">Loading highlights...</p>
+            <p class="loading-msg"><div class="spinner"></div>Loading game film...</p>
         </div>
+
+        <div id="schedule-section" class="fade-in" style="display:none;"></div>
     </div>
 
     <div class="footer">
@@ -336,7 +437,12 @@
 
                 if (entries.length === 0) throw new Error('No videos found');
 
-                section.innerHTML = '<h2 class="section-header">Game Film</h2>';
+                section.innerHTML = '';
+                section.className = 'fade-in';
+                const header = document.createElement('h2');
+                header.className = 'section-header';
+                header.textContent = 'Game Film';
+                section.appendChild(header);
                 const grid = document.createElement('div');
                 grid.className = 'grid';
 
@@ -426,9 +532,66 @@
             }
         }
 
+        // ── Upcoming Tournaments ──
+        // Only shows tournaments that haven't passed yet.
+        const TOURNAMENTS = [
+            { month: 'MAR', days: '28-29', name: 'The Florida Opening', location: 'The Villages, FL' },
+            { month: 'APR', days: '4-5',   name: 'Rebels Invitational', location: 'The Big House, Tavares, FL' },
+            { month: 'APR', days: '10-12', name: 'The Gauntlet', location: 'The Villages, FL' },
+            { month: 'APR', days: '18-19', name: 'Tampa Takeover', location: 'Tampa, FL' },
+            { month: 'APR', days: '25-27', name: 'Florida Takeover', location: 'The Villages, FL' },
+            { month: 'MAY', days: '9-10',  name: 'S. FL Showcase', location: 'Wellington Sports Academy, Wellington, FL' },
+            { month: 'MAY', days: '15-17', name: 'Sweet 16', location: 'Atlanta, GA', livePeriod: true },
+            { month: 'MAY', days: '23-25', name: 'North Carolina Memorial', location: 'Concord, NC' },
+            { month: 'JUL', days: '4-5',   name: 'Florida Warm Up', location: 'Orlando, FL' },
+            { month: 'JUL', days: '9-12',  name: 'Elite 32', location: 'Cumming, GA', livePeriod: true },
+            { month: 'JUL', days: '16-19', name: 'Power 24', location: 'Cartersville, GA', livePeriod: true },
+            { month: 'JUL', days: '24-26', name: 'Final Run', location: 'Suwanee, GA' },
+        ];
+
+        function loadSchedule() {
+            const section = document.getElementById('schedule-section');
+            const monthMap = { JAN:0, FEB:1, MAR:2, APR:3, MAY:4, JUN:5, JUL:6, AUG:7, SEP:8, OCT:9, NOV:10, DEC:11 };
+            const now = new Date();
+
+            // Filter to upcoming tournaments only
+            const upcoming = TOURNAMENTS.filter(t => {
+                const endDay = parseInt(t.days.split('-').pop());
+                const monthIdx = monthMap[t.month];
+                const endDate = new Date(2026, monthIdx, endDay, 23, 59);
+                return endDate >= now;
+            });
+
+            if (upcoming.length === 0) return;
+
+            section.style.display = 'block';
+            let html = '<h2 class="section-header">Upcoming Tournaments</h2><div class="schedule-list">';
+
+            upcoming.forEach(t => {
+                const lpClass = t.livePeriod ? ' live-period' : '';
+                const badge = t.livePeriod ? '<span class="schedule-badge">NCAA Live Period</span>' : '';
+                html += `
+                    <div class="schedule-card${lpClass}">
+                        <div class="schedule-date">
+                            <div class="schedule-month">${t.month}</div>
+                            <div class="schedule-days">${t.days}</div>
+                        </div>
+                        <div class="schedule-details">
+                            <div class="schedule-name">${t.name}</div>
+                            <div class="schedule-location">${t.location}</div>
+                        </div>
+                        ${badge}
+                    </div>`;
+            });
+
+            html += '</div>';
+            section.innerHTML = html;
+        }
+
         // ── Initialize ──
         loadVideos();
         loadStats();
+        loadSchedule();
     </script>
 </body>
 </html>
