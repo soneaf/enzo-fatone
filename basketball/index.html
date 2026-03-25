@@ -143,6 +143,80 @@
             font-size: 28px;
         }
 
+        /* ── Ticker ── */
+        .ticker-wrap {
+            background: var(--navy-dark);
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+        }
+
+        .ticker-wrap::before,
+        .ticker-wrap::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 40px;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .ticker-wrap::before {
+            left: 0;
+            background: linear-gradient(to right, var(--navy-dark), transparent);
+        }
+
+        .ticker-wrap::after {
+            right: 0;
+            background: linear-gradient(to left, var(--navy-dark), transparent);
+        }
+
+        .ticker-track {
+            display: inline-block;
+            animation: ticker 28s linear infinite;
+            padding: 10px 0;
+        }
+
+        .ticker-track:hover {
+            animation-play-state: paused;
+        }
+
+        @keyframes ticker {
+            0%   { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .ticker-item {
+            display: inline-block;
+            padding: 0 32px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: var(--muted);
+        }
+
+        .ticker-label {
+            color: var(--gold);
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-size: 10px;
+            margin-right: 8px;
+        }
+
+        .ticker-highlight {
+            color: #fff;
+            font-weight: 800;
+        }
+
+        .ticker-sep {
+            display: inline-block;
+            color: var(--card-border);
+            padding: 0 8px;
+            font-size: 10px;
+        }
+
         /* ── Content ── */
         .container {
             max-width: 1200px;
@@ -508,6 +582,7 @@
             <div class="stat-box"><div class="stat-val" id="valAPG"><span class="stat-loading">—</span></div><div class="stat-label">APG</div></div>
             <div class="stat-box"><div class="stat-val accent" id="valGPA">3.8</div><div class="stat-label">GPA</div></div>
         </div>
+        <div class="ticker-wrap" id="ticker" style="display:none;"></div>
     </div>
 
     <div class="container">
@@ -837,11 +912,106 @@
             section.innerHTML = html;
         }
 
+        // ── Ticker ──
+        async function loadTicker() {
+            const ticker = document.getElementById('ticker');
+            const items = [];
+
+            // Next tournament
+            const monthMap = { JAN:0, FEB:1, MAR:2, APR:3, MAY:4, JUN:5, JUL:6, AUG:7, SEP:8, OCT:9, NOV:10, DEC:11 };
+            const now = new Date();
+            const next = TOURNAMENTS.find(t => {
+                const endDay = parseInt(t.days.split('-').pop());
+                return new Date(2026, monthMap[t.month], endDay, 23, 59) >= now;
+            });
+
+            if (next) {
+                items.push(
+                    `<span class="ticker-label">Up Next</span>` +
+                    `<span class="ticker-highlight">${next.name}</span> ` +
+                    `<span class="ticker-sep">&mdash;</span> ` +
+                    `${next.month} ${next.days} @ ${next.location}` +
+                    (next.livePeriod ? ` <span class="ticker-sep">|</span> <span style="color:var(--gold);">NCAA Live Period</span>` : '')
+                );
+            }
+
+            // Last game stats from sheet
+            try {
+                const resp = await fetch(SHEETS_URL);
+                const text = await resp.text();
+                const json = JSON.parse(text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1));
+                const rows = json.table.rows;
+                const cols = json.table.cols;
+                const headers = cols.map(c => (c.label || '').toString().trim());
+
+                const find = (key, alt) => {
+                    let i = headers.findIndex(h => h === key);
+                    if (i === -1 && alt) i = headers.findIndex(h => h === alt);
+                    return i;
+                };
+
+                const ptsI = find('PTS', 'Points');
+                const rebI = find('REB', 'Rebounds');
+                const astI = find('AST', 'Assists');
+                const stlI = find('STL', 'Steals');
+                const tovI = find('TOV', 'TO');
+                const tpmI = find('3PM');
+                const tpaI = find('3PA');
+                const oppI = find('Opponent', 'Game/Event');
+                const resI = find('Result');
+                const scoreI = find('Final Score');
+
+                // Get last row with data
+                let lastRow = null;
+                for (let i = rows.length - 1; i >= 0; i--) {
+                    const pts = rows[i].c[ptsI];
+                    if (pts && pts.v && parseFloat(pts.v) > 0) { lastRow = rows[i]; break; }
+                }
+
+                if (lastRow) {
+                    const val = (idx) => lastRow.c[idx] ? (lastRow.c[idx].f || lastRow.c[idx].v || '') : '';
+                    const pts = val(ptsI);
+                    const reb = val(rebI);
+                    const ast = val(astI);
+                    const tpm = val(tpmI);
+                    const tpa = val(tpaI);
+                    const stl = stlI !== -1 ? val(stlI) : '';
+                    const tov = tovI !== -1 ? val(tovI) : '';
+                    const opp = oppI !== -1 ? val(oppI) : '';
+                    const result = resI !== -1 ? val(resI) : '';
+                    const score = scoreI !== -1 ? val(scoreI) : '';
+
+                    let line = `<span class="ticker-label">Last Game</span>`;
+                    line += `<span class="ticker-highlight">${pts} PTS</span>`;
+                    if (tpm && tpa) line += `, ${tpm}-${tpa} 3PT`;
+                    if (reb) line += `, ${reb} REB`;
+                    if (ast && ast !== '0') line += `, ${ast} AST`;
+                    if (stl && stl !== '0') line += `, ${stl} STL`;
+                    if (tov === '0') line += `, 0 TO`;
+                    if (opp) {
+                        line += ` <span class="ticker-sep">&mdash;</span> vs ${opp}`;
+                        if (result && score) line += ` (${result[0]} ${score})`;
+                    }
+                    items.push(line);
+                }
+            } catch (err) {
+                console.warn('Ticker stats failed:', err);
+            }
+
+            if (items.length === 0) return;
+
+            // Build the ticker — duplicate content for seamless loop
+            const content = items.map(i => `<span class="ticker-item">${i}</span>`).join('');
+            ticker.innerHTML = `<div class="ticker-track">${content}${content}</div>`;
+            ticker.style.display = 'block';
+        }
+
         // ── Initialize ──
         loadVideos();
         loadStats();
         loadFullStats();
         loadSchedule();
+        loadTicker();
     </script>
 </body>
 </html>
