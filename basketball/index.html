@@ -1027,6 +1027,34 @@
             const ticker = document.getElementById('ticker');
             const items = [];
 
+            // Upcoming CFCA games (from the Schedule tab) — lead the ticker
+            try {
+                const d = await CFCA_DATA;
+                const sched = (d && d.schedule) || [];
+                const pad = (x) => String(x).padStart(2, '0');
+                const t = new Date();
+                const todayIso = `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`;
+                const MON = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+                const up = sched
+                    .filter(g => g.Date && String(g.Date) >= todayIso)
+                    .sort((a, b) => String(a.Date).localeCompare(String(b.Date)))
+                    .slice(0, 4);
+                up.forEach((g, i) => {
+                    const [, m, dd] = String(g.Date).split('-');
+                    const mon = MON[(parseInt(m, 10) || 1) - 1];
+                    const day = parseInt(dd, 10) || '';
+                    const ha = String(g['Home/Away'] || '');
+                    const isHome = /home|^h/i.test(ha), isAway = /away|^a|@/i.test(ha);
+                    const vs = `${isHome ? 'vs' : isAway ? '@' : 'vs'} ${g.Opponent || 'TBD'}`;
+                    const time = /T/.test(String(g.Time)) ? '' : (g.Time || '');
+                    let line = `<span class="ticker-label">${i === 0 ? 'Next Game' : 'Upcoming'}</span>`;
+                    line += `<span class="ticker-highlight">${vs}</span> <span class="ticker-sep">&mdash;</span> ${mon} ${day}`;
+                    if (time) line += ` &middot; ${time}`;
+                    if (g.Location) line += ` @ ${g.Location}`;
+                    items.push(line);
+                });
+            } catch (err) { console.warn('Ticker schedule failed:', err); }
+
             // Next tournament
             const monthMap = { JAN:0, FEB:1, MAR:2, APR:3, MAY:4, JUN:5, JUL:6, AUG:7, SEP:8, OCT:9, NOV:10, DEC:11 };
             const now = new Date();
