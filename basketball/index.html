@@ -243,6 +243,17 @@
             grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
             gap: 20px;
         }
+        /* In The News — capped card width so a single tweet stays compact, and
+           multiple tweets tile into a centered grid. */
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 360px));
+            gap: 20px;
+            justify-content: center;
+            align-items: start;
+        }
+        .news-grid .news-item { display: flex; justify-content: center; }
+        .news-grid .news-item .twitter-tweet { width: 100% !important; }
 
         .video-card {
             background: var(--card);
@@ -1137,9 +1148,9 @@
                 const d = await CFCA_DATA;
                 const feats = (d && d.featured) || [];
                 if (!feats.length) return;
-                // Same responsive grid as the video section; each tweet sizes to its
-                // cell (≈340–440px) instead of rendering at the full ~550px width.
-                let html = '<h2 class="section-header">In The News</h2><div class="grid">';
+                // Capped-width grid so each tweet renders as a compact card (~280–360px),
+                // whether there's one or many.
+                let html = '<h2 class="section-header">In The News</h2><div class="news-grid">';
                 feats.forEach(f => {
                     html += `<div class="news-item"><blockquote class="twitter-tweet" data-theme="dark" data-dnt="true" data-conversation="none" style="margin:0 auto;"><a href="${f.url}"></a></blockquote></div>`;
                 });
