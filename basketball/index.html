@@ -6,7 +6,7 @@
     <title>Enzo Fatone | Class of 2027</title>
 
     <meta property="og:title" content="Enzo Fatone - Basketball Recruiting Profile">
-    <meta property="og:description" content="SG | 6'0 | 185 lbs | Class of 2027 | Sunshine Elite / Montverde Academy">
+    <meta property="og:description" content="SG | 6'0 | 185 lbs | Class of 2027 | Sunshine Elite / CFCA Eagles">
     <meta property="og:image" content="https://raw.githubusercontent.com/soneaf/enzo-fatone/refs/heads/main/enzo-preview.webp">
     <meta property="og:url" content="https://enzo-fatone.com/basketball">
     <meta property="og:type" content="website">
@@ -644,11 +644,11 @@
 </head>
 <body>
     <div class="sticky-wrapper">
-        <div class="vitals">SG &nbsp;|&nbsp; 6'0" &nbsp;|&nbsp; 185 LBS &nbsp;|&nbsp; CLASS OF 2027 &nbsp;|&nbsp; SUNSHINE ELITE &nbsp;/&nbsp; MONTVERDE ACADEMY</div>
+        <div class="vitals">SG &nbsp;|&nbsp; 6'0" &nbsp;|&nbsp; 185 LBS &nbsp;|&nbsp; CLASS OF 2027 &nbsp;|&nbsp; SUNSHINE ELITE &nbsp;/&nbsp; CFCA EAGLES</div>
         <div class="hero">
             <div>
                 <h1>Enzo Fatone</h1>
-                <div class="subhead">Student-Athlete &nbsp;|&nbsp; <span class="program-name">Sunshine Elite 2027</span></div>
+                <div class="subhead">Student-Athlete &nbsp;|&nbsp; <span class="program-name">CFCA Eagles &nbsp;/&nbsp; Sunshine Elite</span></div>
             </div>
             <a href="mailto:enzo.fatone4@gmail.com" class="btn-contact">Contact Recruiting</a>
         </div>
@@ -678,6 +678,7 @@
             </div>
         </div>
 
+        <div id="games-section" style="display:none;"></div>
         <div id="schedule-section" style="display:none;"></div>
     </div>
 
@@ -727,11 +728,21 @@
         const CHANNEL_ID = 'UCX3fUr2zuSlWaB28TPgZaXA';
         const RSS_PROXY = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://www.youtube.com/feeds/videos.xml?channel_id=${CHANNEL_ID}`)}`;
 
-        // ── Google Sheets Stats ──
-        // Pulls live season averages from the team Google Sheet.
-        const SHEET_ID = '1QkuOXoZBgEw9YU4hMWe1UTyIYYYidJOcDyyXLdAlBfs';
-        const SHEET_RANGE = 'Sheet1';
-        const SHEETS_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_RANGE}`;
+        // ── CFCA Eagles Backend (Apps Script) ──
+        // Live season stats + game log + schedule for the current CFCA season —
+        // the same source the stat tracker and the email newsletter use.
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyViCy67sT0PlvSOL3BJxfMvlVPtyL5XnbEq813AIjFFVqwVIVNo74luRLIxgxOmSpg/exec';
+        const PLAYER = 'Enzo Fatone';
+        // Stats go live when the 2026-27 season starts. This hides pre-season test
+        // data now and auto-flips ON once real games (dated on/after this) are logged
+        // in the tracker — no code change needed. Adjust if the season opens earlier.
+        const SEASON_START = '2026-09-01';
+        // Fetch once; every section shares this single request.
+        const CFCA_DATA = fetch(API_URL).then(r => r.json()).catch(() => null);
+        const enzoGames = (d) => ((d && d.data) || []).filter(r =>
+            String(r.Player).trim() === PLAYER && r.Date && String(r.Date) >= SEASON_START);
+        // Format a percentage that may arrive as 0.5 (season tab) or 50.0 (game log).
+        const pctFmt = (v) => { const n = parseFloat(v); return isNaN(n) ? '' : (n <= 1 ? (n * 100).toFixed(1) : n.toFixed(1)) + '%'; };
 
         // ── Load YouTube Videos ──
         async function loadVideos() {
@@ -758,8 +769,10 @@
                 entries.forEach(entry => {
                     const videoId = entry.querySelector('videoId').textContent;
                     const title = entry.querySelector('title').textContent;
-                    // Strip the repeated "Enzo Fatone 6'0 SG Montverde Academy - " prefix
-                    const cleanTitle = title.replace(/Enzo Fatone.*?-\s*/, '').trim() || title;
+                    // Strip the repeated "Enzo Fatone … - " prefix, and show the current
+                    // school in any older titles that still reference Montverde.
+                    let cleanTitle = (title.replace(/Enzo Fatone.*?-\s*/, '').trim() || title);
+                    cleanTitle = cleanTitle.replace(/Montverde Academy/gi, 'CFCA Eagles');
 
                     grid.innerHTML += `
                         <div class="video-card">
@@ -795,49 +808,20 @@
             }
         }
 
-        // ── Load Stats from Google Sheets ──
+        // ── Load Season Averages (header strip) ──
+        // Averaged client-side from the season's logged games (date-gated), so it
+        // stays empty until the season opens, then fills in automatically.
         async function loadStats() {
+            const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
             try {
-                const resp = await fetch(SHEETS_URL);
-                const text = await resp.text();
-                // Google Sheets JSON response is wrapped in a callback
-                const json = JSON.parse(text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1));
-                const rows = json.table.rows;
-                const cols = json.table.cols;
-
-                // Find column indices
-                const headers = cols.map(c => (c.label || '').toString().trim());
-                const ptsIdx = headers.findIndex(h => h === 'PTS' || h === 'Points');
-                const rebIdx = headers.findIndex(h => h === 'REB' || h === 'Rebounds');
-                const astIdx = headers.findIndex(h => h === 'AST' || h === 'Assists');
-
-                if (ptsIdx === -1) throw new Error('PTS column not found');
-
-                // Calculate averages across all games
-                let totalPts = 0, totalReb = 0, totalAst = 0, games = 0;
-                rows.forEach(row => {
-                    const pts = row.c[ptsIdx] ? parseFloat(row.c[ptsIdx].v) : 0;
-                    const reb = row.c[rebIdx] ? parseFloat(row.c[rebIdx].v) : 0;
-                    const ast = row.c[astIdx] ? parseFloat(row.c[astIdx].v) : 0;
-                    if (pts > 0 || reb > 0 || ast > 0) {
-                        totalPts += pts;
-                        totalReb += reb;
-                        totalAst += ast;
-                        games++;
-                    }
-                });
-
-                if (games > 0) {
-                    document.getElementById('valPPG').textContent = (totalPts / games).toFixed(1);
-                    document.getElementById('valRPG').textContent = (totalReb / games).toFixed(1);
-                    document.getElementById('valAPG').textContent = (totalAst / games).toFixed(1);
-                }
+                const games = enzoGames(await CFCA_DATA);
+                if (!games.length) throw new Error('Season not started');
+                const avg = (k) => games.reduce((sum, g) => sum + (parseFloat(g[k]) || 0), 0) / games.length;
+                set('valPPG', avg('PTS').toFixed(1));
+                set('valRPG', avg('REB').toFixed(1));
+                set('valAPG', avg('AST').toFixed(1));
             } catch (err) {
-                console.warn('Could not load stats from Google Sheet:', err);
-                // Show fallback stats
-                document.getElementById('valPPG').textContent = '—';
-                document.getElementById('valRPG').textContent = '—';
-                document.getElementById('valAPG').textContent = '—';
+                set('valPPG', '—'); set('valRPG', '—'); set('valAPG', '—');
             }
         }
 
@@ -848,106 +832,130 @@
             panel.classList.toggle('open');
         }
 
-        // ── Load Full Stats Table from Google Sheets ──
+        // ── Load Full Stats Table (CFCA game log) ──
         async function loadFullStats() {
             const container = document.getElementById('stats-table-container');
             try {
-                const resp = await fetch(SHEETS_URL);
-                const text = await resp.text();
-                const json = JSON.parse(text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1));
-                const rows = json.table.rows;
-                const cols = json.table.cols;
-                const headers = cols.map(c => (c.label || '').toString().trim());
+                const games = enzoGames(await CFCA_DATA);
+                if (!games.length) { container.innerHTML = '<p class="stats-loading">No games logged yet this season.</p>'; return; }
 
-                // Columns we want to display
-                const displayCols = [
-                    { key: 'Date', label: 'Date' },
-                    { key: 'Opponent', label: 'OPP', alt: 'Game/Event' },
-                    { key: 'Result', label: 'W/L' },
-                    { key: 'PTS', label: 'PTS', alt: 'Points' },
-                    { key: 'FGM', label: 'FGM' },
-                    { key: 'FGA', label: 'FGA' },
-                    { key: 'FG%', label: 'FG%' },
-                    { key: '3PM', label: '3PM' },
-                    { key: '3PA', label: '3PA' },
-                    { key: '3P%', label: '3P%' },
-                    { key: 'FTM', label: 'FTM' },
-                    { key: 'FTA', label: 'FTA' },
-                    { key: 'REB', label: 'REB', alt: 'Rebounds' },
-                    { key: 'AST', label: 'AST', alt: 'Assists' },
-                    { key: 'STL', label: 'STL', alt: 'Steals' },
-                    { key: 'BLK', label: 'BLK', alt: 'Blocks' },
-                    { key: 'TOV', label: 'TO', alt: 'TO' },
+                // Columns to display (keys match the Game Log headers).
+                const cols = [
+                    { k: 'Date', label: 'Date' },
+                    { k: 'Opponent', label: 'OPP' },
+                    { k: 'Result', label: 'W/L' },
+                    { k: 'PTS', label: 'PTS', n: 1 },
+                    { k: 'FGM', label: 'FGM', n: 1 },
+                    { k: 'FGA', label: 'FGA', n: 1 },
+                    { k: 'FG%', label: 'FG%', pct: 1 },
+                    { k: '3PM', label: '3PM', n: 1 },
+                    { k: '3PA', label: '3PA', n: 1 },
+                    { k: '3P%', label: '3P%', pct: 1 },
+                    { k: 'FTM', label: 'FTM', n: 1 },
+                    { k: 'FTA', label: 'FTA', n: 1 },
+                    { k: 'REB', label: 'REB', n: 1 },
+                    { k: 'AST', label: 'AST', n: 1 },
+                    { k: 'STL', label: 'STL', n: 1 },
+                    { k: 'BLK', label: 'BLK', n: 1 },
+                    { k: 'TOV', label: 'TO', n: 1 },
                 ];
 
-                // Map display cols to actual column indices
-                const colMap = displayCols.map(dc => {
-                    let idx = headers.findIndex(h => h === dc.key);
-                    if (idx === -1 && dc.alt) idx = headers.findIndex(h => h === dc.alt);
-                    return { ...dc, idx };
-                }).filter(dc => dc.idx !== -1);
-
-                if (colMap.length === 0) throw new Error('No matching columns found');
-
-                // Build table
                 let html = '<div class="stats-table-wrapper"><table class="stats-table"><thead><tr>';
-                colMap.forEach(c => { html += `<th>${c.label}</th>`; });
+                cols.forEach(c => { html += `<th>${c.label}</th>`; });
                 html += '</tr></thead><tbody>';
 
-                // Track totals for averaging
-                const numericCols = ['PTS','FGM','FGA','3PM','3PA','FTM','FTA','REB','AST','STL','BLK','TOV','TO'];
-                const totals = {};
-                colMap.forEach(c => { if (numericCols.includes(c.key) || numericCols.includes(c.alt)) totals[c.key] = 0; });
-                let gameCount = 0;
+                const totals = {}; cols.forEach(c => { if (c.n || c.pct) totals[c.k] = 0; });
 
-                rows.forEach(row => {
+                games.forEach(g => {
                     html += '<tr>';
-                    let hasData = false;
-                    colMap.forEach(c => {
-                        const cell = row.c[c.idx];
-                        let val = cell ? (cell.f || cell.v || '') : '';
-                        if (val === null || val === undefined) val = '';
-
-                        // Track numeric totals
-                        if (totals.hasOwnProperty(c.key) && cell && cell.v != null) {
-                            const num = parseFloat(cell.v);
-                            if (!isNaN(num)) { totals[c.key] += num; hasData = true; }
-                        }
-
-                        html += `<td>${val}</td>`;
+                    cols.forEach(c => {
+                        let v = g[c.k]; if (v == null) v = '';
+                        if (c.pct) v = (v === '') ? '' : pctFmt(v);
+                        else if (c.n) { const num = parseFloat(g[c.k]); if (!isNaN(num)) totals[c.k] += num; }
+                        html += `<td>${v}</td>`;
                     });
-                    if (hasData) gameCount++;
                     html += '</tr>';
                 });
 
-                // Averages row
-                if (gameCount > 0) {
-                    html += '</tbody><tfoot><tr>';
-                    colMap.forEach(c => {
-                        if (c.key === 'Date') { html += `<td>AVG</td>`; }
-                        else if (c.key === 'Opponent' || c.key === 'Result') { html += '<td></td>'; }
-                        else if (c.key === 'FG%' || c.key === '3P%') {
-                            // Calculate percentage from totals
-                            const madeKey = c.key === 'FG%' ? 'FGM' : '3PM';
-                            const attKey = c.key === 'FG%' ? 'FGA' : '3PA';
-                            const made = totals[madeKey] || 0;
-                            const att = totals[attKey] || 0;
-                            html += `<td>${att > 0 ? (made/att*100).toFixed(1) + '%' : '—'}</td>`;
-                        }
-                        else if (totals.hasOwnProperty(c.key)) {
-                            html += `<td>${(totals[c.key] / gameCount).toFixed(1)}</td>`;
-                        }
-                        else { html += '<td></td>'; }
-                    });
-                    html += '</tr></tfoot>';
-                }
-
-                html += '</table></div>';
+                // Averages footer
+                const gc = games.length;
+                html += '</tbody><tfoot><tr>';
+                cols.forEach(c => {
+                    if (c.k === 'Date') html += '<td>AVG</td>';
+                    else if (c.k === 'Opponent' || c.k === 'Result') html += '<td></td>';
+                    else if (c.pct) {
+                        const made = totals[c.k === 'FG%' ? 'FGM' : '3PM'] || 0;
+                        const att = totals[c.k === 'FG%' ? 'FGA' : '3PA'] || 0;
+                        html += `<td>${att > 0 ? (made / att * 100).toFixed(1) + '%' : '—'}</td>`;
+                    }
+                    else if (totals.hasOwnProperty(c.k)) html += `<td>${(totals[c.k] / gc).toFixed(1)}</td>`;
+                    else html += '<td></td>';
+                });
+                html += '</tr></tfoot></table></div>';
                 container.innerHTML = html;
-
             } catch (err) {
                 console.warn('Could not load full stats:', err);
                 container.innerHTML = '<p class="stats-loading">Stats unavailable</p>';
+            }
+        }
+
+        // ── Upcoming Games (CFCA — from the Schedule tab) ──
+        async function loadGames() {
+            const section = document.getElementById('games-section');
+            try {
+                const d = await CFCA_DATA;
+                const sched = (d && d.schedule) || [];
+                const pad = (x) => String(x).padStart(2, '0');
+                const now = new Date();
+                const todayIso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+                const upcoming = sched
+                    .filter(g => g.Date && String(g.Date) >= todayIso)
+                    .sort((a, b) => String(a.Date).localeCompare(String(b.Date)));
+                if (!upcoming.length) return;
+
+                const MON = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+                let html = `
+                    <div class="collapsible-toggle" onclick="togglePanel('games-panel', this)">
+                        <span class="collapsible-title">Upcoming Games</span>
+                        <span class="collapsible-arrow">&#9660;</span>
+                    </div>
+                    <div class="collapsible-panel" id="games-panel">
+                        <div class="schedule-list" style="padding-top:12px;">`;
+
+                upcoming.forEach(g => {
+                    const [, m, dd] = String(g.Date).split('-');
+                    const mon = MON[(parseInt(m, 10) || 1) - 1];
+                    const day = parseInt(dd, 10) || '';
+                    const ha = String(g['Home/Away'] || '');
+                    const isHome = /home|^h/i.test(ha);
+                    const isAway = /away|^a|@/i.test(ha);
+                    const vs = `${isHome ? 'vs' : isAway ? '@' : 'vs'} ${g.Opponent || 'TBD'}`;
+                    const time = /T/.test(String(g.Time)) ? '' : (g.Time || '');
+                    const venue = (g.Location || g.Address)
+                        ? (g.Address
+                            ? `<a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(g.Address)}" target="_blank" class="schedule-location" style="text-decoration:underline;">${g.Location || g.Address}</a>`
+                            : `<div class="schedule-location">${g.Location}</div>`)
+                        : '';
+                    const evt = (g.Event && g.Event !== 'Game') ? ` &middot; ${g.Event}` : '';
+                    html += `
+                        <div class="schedule-card">
+                            <div class="schedule-date">
+                                <div class="schedule-month">${mon}</div>
+                                <div class="schedule-days">${day}</div>
+                            </div>
+                            <div class="schedule-details">
+                                <div class="schedule-name">${vs}${evt}</div>
+                                ${venue}
+                            </div>
+                            ${time ? `<span class="schedule-badge">${time}</span>` : ''}
+                        </div>`;
+                });
+
+                html += '</div></div>';
+                section.style.display = 'block';
+                section.innerHTML = html;
+            } catch (err) {
+                console.warn('Could not load upcoming games:', err);
             }
         }
 
@@ -1036,62 +1044,27 @@
                 );
             }
 
-            // Last game stats from sheet
+            // Last game from the CFCA game log
             try {
-                const resp = await fetch(SHEETS_URL);
-                const text = await resp.text();
-                const json = JSON.parse(text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1));
-                const rows = json.table.rows;
-                const cols = json.table.cols;
-                const headers = cols.map(c => (c.label || '').toString().trim());
-
-                const find = (key, alt) => {
-                    let i = headers.findIndex(h => h === key);
-                    if (i === -1 && alt) i = headers.findIndex(h => h === alt);
-                    return i;
-                };
-
-                const ptsI = find('PTS', 'Points');
-                const rebI = find('REB', 'Rebounds');
-                const astI = find('AST', 'Assists');
-                const stlI = find('STL', 'Steals');
-                const tovI = find('TOV', 'TO');
-                const tpmI = find('3PM');
-                const tpaI = find('3PA');
-                const oppI = find('Opponent', 'Game/Event');
-                const resI = find('Result');
-                const scoreI = find('Final Score');
-
-                // Get last row with data
-                let lastRow = null;
-                for (let i = rows.length - 1; i >= 0; i--) {
-                    const pts = rows[i].c[ptsI];
-                    if (pts && pts.v && parseFloat(pts.v) > 0) { lastRow = rows[i]; break; }
+                const games = enzoGames(await CFCA_DATA);
+                let last = null;
+                for (let i = games.length - 1; i >= 0; i--) {
+                    if (parseFloat(games[i].PTS) > 0) { last = games[i]; break; }
                 }
-
-                if (lastRow) {
-                    const val = (idx) => lastRow.c[idx] ? (lastRow.c[idx].f || lastRow.c[idx].v || '') : '';
-                    const pts = val(ptsI);
-                    const reb = val(rebI);
-                    const ast = val(astI);
-                    const tpm = val(tpmI);
-                    const tpa = val(tpaI);
-                    const stl = stlI !== -1 ? val(stlI) : '';
-                    const tov = tovI !== -1 ? val(tovI) : '';
-                    const opp = oppI !== -1 ? val(oppI) : '';
-                    const result = resI !== -1 ? val(resI) : '';
-                    const score = scoreI !== -1 ? val(scoreI) : '';
-
+                if (last) {
+                    const v = (k) => (last[k] == null ? '' : last[k]);
                     let line = `<span class="ticker-label">Last Game</span>`;
-                    line += `<span class="ticker-highlight">${pts} PTS</span>`;
-                    if (tpm && tpa) line += `, ${tpm}-${tpa} 3PT`;
-                    if (reb) line += `, ${reb} REB`;
-                    if (ast && ast !== '0') line += `, ${ast} AST`;
-                    if (stl && stl !== '0') line += `, ${stl} STL`;
-                    if (tov === '0') line += `, 0 TO`;
+                    line += `<span class="ticker-highlight">${v('PTS')} PTS</span>`;
+                    if (v('3PM') !== '' && v('3PA') !== '') line += `, ${v('3PM')}-${v('3PA')} 3PT`;
+                    if (v('REB')) line += `, ${v('REB')} REB`;
+                    if (v('AST') && String(v('AST')) !== '0') line += `, ${v('AST')} AST`;
+                    if (v('STL') && String(v('STL')) !== '0') line += `, ${v('STL')} STL`;
+                    if (String(v('TOV')) === '0') line += `, 0 TO`;
+                    const opp = v('Opponent');
                     if (opp) {
                         line += ` <span class="ticker-sep">&mdash;</span> vs ${opp}`;
-                        if (result && score) line += ` (${result[0]} ${score})`;
+                        const result = v('Result'), score = v('Final Score');
+                        if (result && score) line += ` (${String(result)[0]} ${score})`;
                     }
                     items.push(line);
                 }
@@ -1111,7 +1084,8 @@
         loadVideos();
         loadStats();
         loadFullStats();
-        loadSchedule();
+        loadGames();      // CFCA upcoming games (Google Sheet schedule)
+        loadSchedule();   // AAU tournaments (Sunshine Elite)
         loadTicker();
     </script>
 </body>
