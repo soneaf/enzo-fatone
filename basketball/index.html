@@ -1137,10 +1137,11 @@
                 const d = await CFCA_DATA;
                 const feats = (d && d.featured) || [];
                 if (!feats.length) return;
-                let html = '<h2 class="section-header">In The News</h2>'
-                    + '<div style="display:flex;flex-wrap:wrap;gap:18px;justify-content:center;align-items:flex-start;">';
+                // Same responsive grid as the video section; each tweet sizes to its
+                // cell (≈340–440px) instead of rendering at the full ~550px width.
+                let html = '<h2 class="section-header">In The News</h2><div class="grid">';
                 feats.forEach(f => {
-                    html += `<blockquote class="twitter-tweet" data-theme="dark" data-dnt="true" style="margin:0;"><a href="${f.url}"></a></blockquote>`;
+                    html += `<div class="news-item"><blockquote class="twitter-tweet" data-theme="dark" data-dnt="true" data-conversation="none" style="margin:0 auto;"><a href="${f.url}"></a></blockquote></div>`;
                 });
                 html += '</div>';
                 section.innerHTML = html;
