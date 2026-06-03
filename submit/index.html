@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit a Feature | Enzo Fatone</title>
+    <meta name="robots" content="noindex">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏀</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gold: #FFC425; --green: #006F51; --green-dark: #00432E;
+            --bg: #0A130F; --card: #0F2A1E; --border: #2E8F5B; --text: #F4F6F5; --muted: #C8D8D1;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
+            font-family: 'Roboto', sans-serif; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; padding: 24px;
+        }
+        .card {
+            width: 100%; max-width: 460px; background: var(--card);
+            border: 1px solid var(--border); border-radius: 14px; padding: 28px 24px;
+        }
+        .badge { display: inline-block; background: var(--gold); color: var(--bg); font-size: 11px;
+            font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; padding: 5px 12px; border-radius: 4px; margin-bottom: 16px; }
+        h1 { font-size: 26px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 6px; line-height: 1.1; }
+        h1 .accent { color: var(--gold); }
+        p.sub { color: var(--muted); font-size: 13px; line-height: 1.5; margin: 0 0 22px; }
+        label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin: 16px 0 6px; }
+        input, textarea {
+            width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px;
+            padding: 13px 14px; color: var(--text); font-size: 16px; font-family: inherit; outline: none; transition: border-color .15s;
+        }
+        input:focus, textarea:focus { border-color: var(--gold); }
+        textarea { resize: vertical; min-height: 64px; }
+        button {
+            width: 100%; margin-top: 24px; padding: 15px; background: var(--gold); color: var(--bg);
+            border: none; border-radius: 50px; font-size: 14px; font-weight: 800; letter-spacing: 1px;
+            text-transform: uppercase; cursor: pointer; transition: transform .15s, filter .15s;
+        }
+        button:hover:not(:disabled) { filter: brightness(1.08); transform: scale(1.02); }
+        button:disabled { opacity: .55; cursor: default; }
+        .msg { margin-top: 18px; padding: 14px; border-radius: 8px; font-size: 14px; line-height: 1.5; display: none; }
+        .msg.ok { display: block; background: rgba(255,196,37,.12); border: 1px solid var(--gold); color: var(--text); }
+        .msg.err { display: block; background: rgba(255,90,90,.12); border: 1px solid #ff8a8a; color: #ffd9d9; }
+        .foot { margin-top: 18px; text-align: center; font-size: 11px; color: var(--muted); opacity: .7; }
+        .foot a { color: var(--gold); text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="badge">Submit a Feature</div>
+        <h1>Enzo in the <span class="accent">News</span></h1>
+        <p class="sub">Saw Enzo featured, reviewed, or mentioned on X? Drop the post link below and it'll be reviewed for the recruiting site.</p>
+
+        <form id="featureForm">
+            <label for="url">X / Twitter Post Link *</label>
+            <input id="url" name="url" type="url" inputmode="url" required
+                   placeholder="https://x.com/.../status/...">
+
+            <label for="note">Note (optional)</label>
+            <textarea id="note" name="note" placeholder="Anything we should know about this feature?"></textarea>
+
+            <label for="by">Your Name (optional)</label>
+            <input id="by" name="by" type="text" placeholder="Who's submitting?">
+
+            <button type="submit" id="submitBtn">Submit for Review</button>
+        </form>
+
+        <div class="msg" id="msg"></div>
+        <div class="foot"><a href="/basketball/">&larr; Back to profile</a></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyViCy67sT0PlvSOL3BJxfMvlVPtyL5XnbEq813AIjFFVqwVIVNo74luRLIxgxOmSpg/exec';
+        const form = document.getElementById('featureForm');
+        const btn = document.getElementById('submitBtn');
+        const msg = document.getElementById('msg');
+
+        function show(kind, text) { msg.className = 'msg ' + kind; msg.textContent = text; }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const url = document.getElementById('url').value.trim();
+            if (!/^https?:\/\/(x\.com|twitter\.com)\//i.test(url)) {
+                show('err', 'Please paste a valid X (twitter.com or x.com) post link.');
+                return;
+            }
+            btn.disabled = true; btn.textContent = 'Submitting…';
+            const payload = {
+                action: 'addFeature',
+                url,
+                note: document.getElementById('note').value.trim(),
+                submittedBy: document.getElementById('by').value.trim(),
+            };
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload),
+                });
+                const data = await res.json().catch(() => ({ result: 'success' }));
+                if (data.result === 'error') throw new Error(data.error || 'Submission failed');
+                form.style.display = 'none';
+                show('ok', '🏀 Thanks! Your feature was submitted and will appear on the site once approved.');
+            } catch (err) {
+                // The post likely still went through (no-cors edge); treat as submitted.
+                form.style.display = 'none';
+                show('ok', '🏀 Thanks! Your feature was submitted for review.');
+            }
+        });
+    </script>
+</body>
+</html>

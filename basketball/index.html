@@ -683,6 +683,9 @@
         <div id="schedule-section" style="display:none;"></div>
     </div>
 
+    <!-- In The News (X features submitted via the form, once approved) -->
+    <div class="container" id="news-section" style="display:none;"></div>
+
     <!-- Coaches & Trainers -->
     <div class="container">
         <h2 class="section-header">Coaches & Trainers</h2>
@@ -1118,6 +1121,36 @@
             ticker.style.display = 'block';
         }
 
+        // ── In The News (approved X features from the submission form) ──
+        function loadTwitterWidgets(scope) {
+            if (window.twttr && window.twttr.widgets) { window.twttr.widgets.load(scope); return; }
+            const s = document.createElement('script');
+            s.src = 'https://platform.twitter.com/widgets.js';
+            s.async = true; s.charSet = 'utf-8';
+            s.onload = () => { if (window.twttr && window.twttr.widgets) window.twttr.widgets.load(scope); };
+            document.body.appendChild(s);
+        }
+
+        async function loadNews() {
+            const section = document.getElementById('news-section');
+            try {
+                const d = await CFCA_DATA;
+                const feats = (d && d.featured) || [];
+                if (!feats.length) return;
+                let html = '<h2 class="section-header">In The News</h2>'
+                    + '<div style="display:flex;flex-wrap:wrap;gap:18px;justify-content:center;align-items:flex-start;">';
+                feats.forEach(f => {
+                    html += `<blockquote class="twitter-tweet" data-theme="dark" data-dnt="true" style="margin:0;"><a href="${f.url}"></a></blockquote>`;
+                });
+                html += '</div>';
+                section.innerHTML = html;
+                section.style.display = 'block';
+                loadTwitterWidgets(section);
+            } catch (err) {
+                console.warn('Could not load features:', err);
+            }
+        }
+
         // ── Initialize ──
         loadVideos();
         loadStats();
@@ -1125,6 +1158,7 @@
         loadGames();      // CFCA upcoming games (Google Sheet schedule)
         loadSchedule();   // AAU tournaments (Sunshine Elite)
         loadTicker();
+        loadNews();       // approved X features (In The News)
     </script>
 </body>
 </html>
