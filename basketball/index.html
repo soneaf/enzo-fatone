@@ -378,6 +378,18 @@
             color: #fff;
         }
 
+        .schedule-today {
+            display: inline-block;
+            background: var(--gold);
+            color: var(--navy);
+            font-size: 12px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 6px 9px;
+            border-radius: 6px;
+        }
+
         .schedule-details {
             flex: 1;
         }
@@ -971,6 +983,7 @@
                     const [, m, dd] = String(g.Date).split('-');
                     const mon = MON[(parseInt(m, 10) || 1) - 1];
                     const day = parseInt(dd, 10) || '';
+                    const isToday = String(g.Date) === todayIso;
                     const ha = String(g['Home/Away'] || '');
                     const isHome = /home|^h/i.test(ha);
                     const isAway = /away|^a|@/i.test(ha);
@@ -983,10 +996,11 @@
                         : '';
                     const evt = (g.Event && g.Event !== 'Game') ? ` &middot; ${g.Event}` : '';
                     html += `
-                        <div class="schedule-card">
+                        <div class="schedule-card${isToday ? ' live-period' : ''}">
                             <div class="schedule-date">
-                                <div class="schedule-month">${mon}</div>
-                                <div class="schedule-days">${day}</div>
+                                ${isToday
+                                    ? `<div class="schedule-today">Today</div>`
+                                    : `<div class="schedule-month">${mon}</div><div class="schedule-days">${day}</div>`}
                             </div>
                             <div class="schedule-details">
                                 <div class="schedule-name">${vs}${evt}</div>
