@@ -675,6 +675,7 @@
             <div class="stat-box"><div class="stat-val" id="valPPG"><span class="stat-loading">—</span></div><div class="stat-label">PPG</div></div>
             <div class="stat-box"><div class="stat-val" id="valRPG"><span class="stat-loading">—</span></div><div class="stat-label">RPG</div></div>
             <div class="stat-box"><div class="stat-val" id="valAPG"><span class="stat-loading">—</span></div><div class="stat-label">APG</div></div>
+            <div class="stat-box"><div class="stat-val" id="valFGP"><span class="stat-loading">—</span></div><div class="stat-label">FG%</div></div>
             <div class="stat-box"><div class="stat-val accent" id="valGPA">3.8</div><div class="stat-label">GPA</div></div>
         </div>
         <div class="ticker-wrap" id="ticker" style="display:none;"></div>
@@ -852,8 +853,13 @@
                 set('valPPG', avg('PTS').toFixed(1));
                 set('valRPG', avg('REB').toFixed(1));
                 set('valAPG', avg('AST').toFixed(1));
+                // Total FG% = (2PT + 3PT) makes / attempts, free throws excluded
+                const sum = (k) => games.reduce((s, g) => s + (parseFloat(g[k]) || 0), 0);
+                const tMade = sum('FGM') + sum('3PM');
+                const tAtt = sum('FGA') + sum('3PA');
+                set('valFGP', tAtt > 0 ? (tMade / tAtt * 100).toFixed(1) + '%' : '—');
             } catch (err) {
-                set('valPPG', '—'); set('valRPG', '—'); set('valAPG', '—');
+                set('valPPG', '—'); set('valRPG', '—'); set('valAPG', '—'); set('valFGP', '—');
             }
         }
 
