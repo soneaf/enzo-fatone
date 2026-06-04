@@ -883,6 +883,7 @@
                     { k: '3PM', label: '3PM', n: 1 },
                     { k: '3PA', label: '3PA', n: 1 },
                     { k: '3P%', label: '3P%', pct: 1 },
+                    { k: 'Total FG%', label: 'TOT FG%', pct: 1 },
                     { k: 'FTM', label: 'FTM', n: 1 },
                     { k: 'FTA', label: 'FTA', n: 1 },
                     { k: 'REB', label: 'REB', n: 1 },
@@ -916,8 +917,14 @@
                     if (c.k === 'Date') html += '<td>AVG</td>';
                     else if (c.k === 'Opponent' || c.k === 'Result') html += '<td></td>';
                     else if (c.pct) {
-                        const made = totals[c.k === 'FG%' ? 'FGM' : '3PM'] || 0;
-                        const att = totals[c.k === 'FG%' ? 'FGA' : '3PA'] || 0;
+                        let made, att;
+                        if (c.k === 'Total FG%') {            // 2s + 3s combined (excludes FTs)
+                            made = (totals['FGM'] || 0) + (totals['3PM'] || 0);
+                            att = (totals['FGA'] || 0) + (totals['3PA'] || 0);
+                        } else {
+                            made = totals[c.k === 'FG%' ? 'FGM' : '3PM'] || 0;
+                            att = totals[c.k === 'FG%' ? 'FGA' : '3PA'] || 0;
+                        }
                         html += `<td>${att > 0 ? (made / att * 100).toFixed(1) + '%' : '—'}</td>`;
                     }
                     else if (totals.hasOwnProperty(c.k)) html += `<td>${(totals[c.k] / gc).toFixed(1)}</td>`;
