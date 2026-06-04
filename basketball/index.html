@@ -254,6 +254,13 @@
         }
         .news-grid .news-item { display: flex; justify-content: center; }
         .news-grid .news-item .twitter-tweet { width: 100% !important; }
+        /* Season Trends */
+        .trend-highs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+        .trend-badge { background: var(--card); border: 1px solid var(--card-border); border-bottom: 3px solid var(--gold); border-radius: 8px; padding: 10px 16px; min-width: 80px; text-align: center; }
+        .trend-badge .tb-val { font-size: 26px; font-weight: 900; color: var(--gold); line-height: 1; }
+        .trend-badge .tb-lbl { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-top: 5px; }
+        .trend-chart { background: var(--card); border: 1px solid var(--card-border); border-radius: 10px; padding: 16px; }
+        .trend-chart-label { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
 
         .video-card {
             background: var(--card);
@@ -690,6 +697,7 @@
             </div>
         </div>
 
+        <div id="trends-section" style="display:none;"></div>
         <div id="games-section" style="display:none;"></div>
         <div id="schedule-section" style="display:none;"></div>
     </div>
@@ -1163,10 +1171,52 @@
             }
         }
 
+        // ── Season Trends + Career Highs (from the game log) ──
+        async function loadTrends() {
+            const section = document.getElementById('trends-section');
+            try {
+                const games = enzoGames(await CFCA_DATA);
+                if (!games.length) return;
+                const num = (g, k) => parseFloat(g[k]) || 0;
+                const hi = (k) => games.reduce((m, g) => Math.max(m, num(g, k)), 0);
+                const highs = [['PTS', hi('PTS')], ['REB', hi('REB')], ['AST', hi('AST')], ['STL', hi('STL')], ['3PM', hi('3PM')]];
+
+                const pts = games.map(g => num(g, 'PTS'));
+                const labels = games.map((g, i) => (String(g.Opponent || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 3).toUpperCase()) || ('G' + (i + 1)));
+                const maxP = Math.max(...pts, 10);
+                const avg = pts.reduce((a, b) => a + b, 0) / pts.length;
+
+                const colW = 46, barW = 24, top = 18, barArea = 130, base = top + barArea, svgH = base + 26;
+                const svgW = Math.max(pts.length * colW, colW);
+                let bars = '';
+                pts.forEach((p, i) => {
+                    const x = i * colW + colW / 2;
+                    const bh = (p / maxP) * barArea;
+                    const by = base - bh;
+                    bars += `<rect x="${(x - barW / 2).toFixed(1)}" y="${by.toFixed(1)}" width="${barW}" height="${bh.toFixed(1)}" rx="3" fill="#FFC425"/>`;
+                    bars += `<text x="${x}" y="${(by - 5).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="700" fill="#F4F6F5">${p}</text>`;
+                    bars += `<text x="${x}" y="${base + 16}" text-anchor="middle" font-size="10" fill="#C8D8D1">${labels[i]}</text>`;
+                });
+                const avgY = base - (avg / maxP) * barArea;
+                const avgLine = `<line x1="0" y1="${avgY.toFixed(1)}" x2="${svgW}" y2="${avgY.toFixed(1)}" stroke="#2E8F5B" stroke-width="1.5" stroke-dasharray="5 4"/>`
+                    + `<text x="3" y="${(avgY - 5).toFixed(1)}" font-size="10" font-weight="700" fill="#3FA877">AVG ${avg.toFixed(1)}</text>`;
+
+                const badges = highs.filter(([, v]) => v > 0).map(([k, v]) =>
+                    `<div class="trend-badge"><div class="tb-val">${v}</div><div class="tb-lbl">High ${k}</div></div>`).join('');
+
+                section.innerHTML = '<h2 class="section-header">Season Trends</h2>'
+                    + `<div class="trend-highs">${badges}</div>`
+                    + '<div class="trend-chart"><div class="trend-chart-label">Points per game</div>'
+                    + `<div style="overflow-x:auto;text-align:center;"><svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}" style="display:inline-block;max-width:100%;">${avgLine}${bars}</svg></div></div>`;
+                section.style.display = 'block';
+            } catch (err) { console.warn('Could not load trends:', err); }
+        }
+
         // ── Initialize ──
         loadVideos();
         loadStats();
         loadFullStats();
+        loadTrends();     // season trends + career highs
         loadGames();      // CFCA upcoming games (Google Sheet schedule)
         loadSchedule();   // AAU tournaments (Sunshine Elite)
         loadTicker();
