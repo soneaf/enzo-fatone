@@ -956,6 +956,36 @@
             }
         }
 
+        // Parse a game's start time into a Date (handles "7:30 PM", "11:10 am",
+        // "2:25pm", "19:30"). Returns null if there's no usable time.
+        function parseGameStart(dateIso, timeStr) {
+            const [y, mo, d] = String(dateIso || '').split('-').map(n => parseInt(n, 10));
+            if (!y || !mo || !d) return null;
+            const t = String(timeStr || '').trim();
+            if (!t || /T\d/.test(t)) return null;            // empty or ISO artifact
+            const m = t.match(/(\d{1,2})(?::(\d{2}))?\s*([ap])\.?m\.?/i) || t.match(/(\d{1,2}):(\d{2})/);
+            if (!m) return null;
+            let hh = parseInt(m[1], 10);
+            const mm = m[2] ? parseInt(m[2], 10) : 0;
+            const ap = (m[3] || '').toLowerCase();
+            if (ap === 'p' && hh < 12) hh += 12;
+            if (ap === 'a' && hh === 12) hh = 0;
+            if (isNaN(hh) || isNaN(mm)) return null;
+            return new Date(y, mo - 1, d, hh, mm, 0, 0);
+        }
+
+        // A game is still "upcoming" if it's a future date, or it's today and the
+        // start time hasn't passed (date-only games stay listed until end of day).
+        function isUpcomingGame(g, now, todayIso) {
+            const dISO = String(g.Date || '');
+            if (!dISO) return false;
+            if (dISO > todayIso) return true;
+            if (dISO < todayIso) return false;
+            const start = parseGameStart(dISO, g.Time);
+            if (!start) return true;
+            return now.getTime() < start.getTime();
+        }
+
         // ── Upcoming Games (CFCA — from the Schedule tab) ──
         async function loadGames() {
             const section = document.getElementById('games-section');
@@ -966,7 +996,7 @@
                 const now = new Date();
                 const todayIso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
                 const upcoming = sched
-                    .filter(g => g.Date && String(g.Date) >= todayIso)
+                    .filter(g => isUpcomingGame(g, now, todayIso))
                     .sort((a, b) => String(a.Date).localeCompare(String(b.Date)));
                 if (!upcoming.length) return;
 
@@ -1094,7 +1124,7 @@
                 const todayIso = `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`;
                 const MON = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
                 const up = sched
-                    .filter(g => g.Date && String(g.Date) >= todayIso)
+                    .filter(g => isUpcomingGame(g, t, todayIso))
                     .sort((a, b) => String(a.Date).localeCompare(String(b.Date)))
                     .slice(0, 4);
                 up.forEach((g, i) => {
