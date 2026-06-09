@@ -238,6 +238,17 @@
 
         .section-header:first-child { margin-top: 10px; }
 
+        /* Team filter (CFCA Eagles / Sunshine Elite / All) — shown when Enzo has
+           games on more than one team, so stats can be viewed per team. */
+        .team-filter { display: none; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 26px 0 4px; }
+        .team-filter button {
+            background: var(--card); border: 1px solid var(--card-border); color: var(--muted);
+            font-weight: 700; font-size: .8rem; letter-spacing: .05em; text-transform: uppercase;
+            padding: 8px 16px; border-radius: 999px; cursor: pointer; transition: all .14s;
+        }
+        .team-filter button:hover { border-color: var(--gold); color: #fff; }
+        .team-filter button.active { background: var(--gold); color: var(--navy); border-color: var(--gold); }
+
         .grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
@@ -698,6 +709,12 @@
             <p class="loading-msg"><div class="spinner"></div>Loading game film...</p>
         </div>
 
+        <div class="team-filter" id="team-filter">
+            <button data-team="all" class="active" onclick="setTeamFilter('all', this)">All Teams</button>
+            <button data-team="CFCA Eagles" onclick="setTeamFilter('CFCA Eagles', this)">CFCA Eagles</button>
+            <button data-team="Sunshine Elite" onclick="setTeamFilter('Sunshine Elite', this)">Sunshine Elite</button>
+        </div>
+
         <div id="stats-section">
             <div class="collapsible-toggle" onclick="togglePanel('stats-panel', this)">
                 <span class="collapsible-title">Season Stats</span>
@@ -784,8 +801,11 @@
         const SEASON_START = '2026-09-01';
         // Fetch once; every section shares this single request.
         const CFCA_DATA = fetch(API_URL).then(r => r.json()).catch(() => null);
+        // Active team filter for the stats sections ('all' | 'CFCA Eagles' | 'Sunshine Elite').
+        let TEAM_FILTER = 'all';
         const enzoGames = (d) => ((d && d.data) || []).filter(r =>
-            String(r.Player).trim() === PLAYER && r.Date && String(r.Date) >= SEASON_START);
+            String(r.Player).trim() === PLAYER && r.Date && String(r.Date) >= SEASON_START &&
+            (TEAM_FILTER === 'all' || String(r.Team || '').trim() === TEAM_FILTER));
         // Format a percentage that may arrive as 0.5 (season tab) or 50.0 (game log).
         const pctFmt = (v) => { const n = parseFloat(v); return isNaN(n) ? '' : (n <= 1 ? (n * 100).toFixed(1) : n.toFixed(1)) + '%'; };
 
@@ -1269,11 +1289,38 @@
             } catch (err) { console.warn('Could not load trends:', err); }
         }
 
+        // ── Team filter (CFCA Eagles / Sunshine Elite / All) ──
+        function setTeamFilter(t, btn) {
+            TEAM_FILTER = t;
+            document.querySelectorAll('#team-filter button').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            // Re-render the stat sections that depend on the filtered games.
+            loadStats();
+            loadFullStats();
+            loadTrends();
+        }
+        // Only reveal the toggle when Enzo actually has games on more than one team.
+        async function initTeamFilter() {
+            const bar = document.getElementById('team-filter');
+            if (!bar) return;
+            const d = await CFCA_DATA;
+            const all = ((d && d.data) || []).filter(r =>
+                String(r.Player).trim() === PLAYER && r.Date && String(r.Date) >= SEASON_START);
+            const teams = [...new Set(all.map(r => String(r.Team || '').trim()).filter(Boolean))];
+            if (teams.length < 2) { bar.style.display = 'none'; return; }
+            bar.querySelectorAll('button[data-team]').forEach(btn => {
+                const t = btn.getAttribute('data-team');
+                if (t !== 'all' && !teams.includes(t)) btn.style.display = 'none';
+            });
+            bar.style.display = 'flex';
+        }
+
         // ── Initialize ──
         loadVideos();
         loadStats();
         loadFullStats();
         loadTrends();     // season trends + career highs
+        initTeamFilter(); // show the per-team toggle if multiple teams are present
         loadGames();      // CFCA upcoming games (Google Sheet schedule)
         loadSchedule();   // AAU tournaments (Sunshine Elite)
         loadTicker();
