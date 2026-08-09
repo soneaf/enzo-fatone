@@ -206,5 +206,11 @@ means adding a section, not removing a filter.**
 - John Elgani's coach card removed entirely, and every mention of Sunshine Elite taken out
   of both pages — vitals bar, subhead, both `og:description` tags, the team-filter button
   and the code comments. Verified against the rendered DOM rather than the source.
+
+  **One mention survives on purpose.** An embedded tweet in "In The News" quotes Sunshine
+  Elite in its own text. Steven's call on 2026-08-09 was to leave it: it is someone else's
+  words in approved third-party content, not site copy, and editing a quote to remove a
+  team name is not a thing you do. So a `grep` for the phrase still hits — that is not a
+  leftover to clean up. Site copy stays clear of it; quoted material is not site copy.
 - The team filter still exists and still works; it reveals itself only when the data holds
   more than one team, which it no longer does, so it stays hidden.
