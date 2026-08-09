@@ -344,6 +344,21 @@
         }
 
         /* ── Tournament Schedule ── */
+        /* Shot chart — NFHS half court, drawn in feet and scaled by the viewBox so the
+           three-point arc is a real arc at any width. */
+        .court-wrap { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px;
+                      padding: 14px; max-width: 560px; margin: 0 auto; }
+        .court-svg { width: 100%; height: auto; display: block; }
+        .court-line { fill: none; stroke: rgba(255,255,255,.28); stroke-width: .35; }
+        .shot-made { fill: var(--gold); }
+        .shot-miss { fill: none; stroke: #e2564a; stroke-width: .45; }
+        .court-legend { display: flex; gap: 18px; justify-content: center; align-items: center;
+                        margin-top: 12px; font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+        .court-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+                          margin-right: 6px; vertical-align: middle; }
+        .court-legend .made i { background: var(--gold); }
+        .court-legend .miss i { border: 1.5px solid #e2564a; }
+
         .schedule-list {
             display: flex;
             flex-direction: column;
@@ -727,6 +742,7 @@
         </div>
 
         <div id="trends-section" style="display:none;"></div>
+        <div id="shotchart-section" style="display:none;"></div>
         <div id="games-section" style="display:none;"></div>
         <div id="schedule-section" style="display:none;"></div>
     </div>
@@ -789,8 +805,56 @@
         // data now and auto-flips ON once real games (dated on/after this) are logged
         // in the tracker — no code change needed. Adjust if the season opens earlier.
         const SEASON_START = '2026-09-01';
-        // Fetch once; every section shares this single request.
-        const CFCA_DATA = fetch(API_URL).then(r => r.json()).catch(() => null);
+        // ── 2026-27 season: live from the tracker app's database ──
+        //
+        // Stats used to come from the Google Sheet this endpoint wraps. They now come from
+        // Supabase, written by the app on Whitney's phone as the game happens, so the page
+        // updates itself with no export step and no sheet to keep tidy.
+        //
+        // The key below is the *publishable* key and is meant to be public. It reaches
+        // exactly three read-only views (season totals, game log, shot locations) — the
+        // base tables stay closed to it, verified by trying.
+        const SB_URL = 'https://wzmtpvqbngevlcelolor.supabase.co/rest/v1';
+        const SB_KEY = 'sb_publishable_JM6iroSzSRt2ZixD_D7Iog_ce1TmVOa';
+        const sb = (view) => fetch(`${SB_URL}/${view}?select=*`, { headers: { apikey: SB_KEY } })
+            .then(r => r.ok ? r.json() : []).catch(() => []);
+
+        // The sheet still serves the things the tracker doesn't know about: the news
+        // features and the subscriber list.
+        const SHEET_DATA = fetch(API_URL).then(r => r.json()).catch(() => null);
+
+        const SB_SEASON = sb('public_season_totals');
+        const SB_SHOTS  = sb('public_shots');
+
+        /**
+         * Reshapes a database game into the column names the sections below were written
+         * against. Adapting at the boundary rather than rewriting four rendering
+         * functions that already work.
+         *
+         * FGM/FGA here mean TWO-pointers, which is what the old sheet meant by them —
+         * `loadStats` adds FGM + 3PM to get total field goals, and that only balances if
+         * threes are excluded. Confirmed against a real sheet row before relying on it.
+         */
+        const adaptGame = (g) => ({
+            Date: g.played_on,
+            Player: PLAYER,
+            Team: 'CFCA Eagles',
+            Opponent: g.opponent_name,
+            Location: g.is_home ? 'Home' : 'Away',
+            Result: g.result === 'W' ? 'Win' : g.result === 'L' ? 'Loss' : 'Tie',
+            'Final Score': `${g.team_score}-${g.opponent_score}`,
+            PTS: g.points, REB: g.reb, AST: g.ast, STL: g.stl,
+            BLK: g.blk, TO: g.tov, PF: g.pf,
+            FGM: (g.fgm || 0) - (g.fg3m || 0), FGA: (g.fga || 0) - (g.fg3a || 0),
+            '3PM': g.fg3m, '3PA': g.fg3a,
+            FTM: g.ftm, FTA: g.fta,
+            OREB: g.oreb, DREB: g.dreb,
+        });
+
+        const CFCA_DATA = (async () => {
+            const [sheet, log] = await Promise.all([SHEET_DATA, sb('public_game_log')]);
+            return { ...(sheet || {}), data: log.map(adaptGame) };
+        })();
         // Active team filter for the stats sections ('all' or a team name).
         let TEAM_FILTER = 'all';
         const enzoGames = (d) => ((d && d.data) || []).filter(r =>
@@ -869,17 +933,15 @@
         async function loadStats() {
             const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
             try {
-                const games = enzoGames(await CFCA_DATA);
-                if (!games.length) throw new Error('Season not started');
-                const avg = (k) => games.reduce((sum, g) => sum + (parseFloat(g[k]) || 0), 0) / games.length;
-                set('valPPG', avg('PTS').toFixed(1));
-                set('valRPG', avg('REB').toFixed(1));
-                set('valAPG', avg('AST').toFixed(1));
-                // Total FG% = (2PT + 3PT) makes / attempts, free throws excluded
-                const sum = (k) => games.reduce((s, g) => s + (parseFloat(g[k]) || 0), 0);
-                const tMade = sum('FGM') + sum('3PM');
-                const tAtt = sum('FGA') + sum('3PA');
-                set('valFGP', tAtt > 0 ? (tMade / tAtt * 100).toFixed(1) + '%' : '—');
+                // Straight from the season view, where every rate is computed from summed
+                // makes and attempts. Averaging per-game percentages is what gave the old
+                // spreadsheet a true-shooting figure above 100%.
+                const [t] = await SB_SEASON;
+                if (!t || !t.gp) throw new Error('Season not started');
+                set('valPPG', Number(t.ppg ?? 0).toFixed(1));
+                set('valRPG', Number(t.rpg ?? 0).toFixed(1));
+                set('valAPG', Number(t.apg ?? 0).toFixed(1));
+                set('valFGP', t.fg_pct != null ? (Number(t.fg_pct) * 100).toFixed(1) + '%' : '—');
             } catch (err) {
                 set('valPPG', '—'); set('valRPG', '—'); set('valAPG', '—'); set('valFGP', '—');
             }
@@ -1279,6 +1341,48 @@
             } catch (err) { console.warn('Could not load trends:', err); }
         }
 
+        // ── Shot chart ──
+        //
+        // Court units are feet, matching the app's CourtView: 50 wide by 47 deep with the
+        // baseline at the top, so a shot's stored 0..1 coordinates map straight onto the
+        // viewBox with no conversion and no chance of the two drifting apart.
+        async function loadShotChart() {
+            const section = document.getElementById('shotchart-section');
+            if (!section) return;
+            try {
+                const shots = await SB_SHOTS;
+                if (!shots.length) return;
+
+                const dots = shots.map(s => {
+                    const x = (s.court_x * 50).toFixed(2), y = (s.court_y * 47).toFixed(2);
+                    return s.shot_made
+                        ? `<circle class="shot-made" cx="${x}" cy="${y}" r=".62"/>`
+                        : `<circle class="shot-miss" cx="${x}" cy="${y}" r=".62"/>`;
+                }).join('');
+
+                const made = shots.filter(s => s.shot_made).length;
+                section.innerHTML = `
+                    <h2 class="section-header">Shot Chart</h2>
+                    <div class="court-wrap">
+                      <svg class="court-svg" viewBox="-1 -1 52 49" preserveAspectRatio="xMidYMid meet">
+                        <rect class="court-line" x="0" y="0" width="50" height="47"/>
+                        <rect class="court-line" x="19" y="0" width="12" height="19"/>
+                        <circle class="court-line" cx="25" cy="19" r="6"/>
+                        <path   class="court-line" d="M 5.25 0 L 5.25 5.25 A 19.75 19.75 0 0 0 44.75 5.25 L 44.75 0"/>
+                        <line   class="court-line" x1="22" y1="4" x2="28" y2="4"/>
+                        <circle class="court-line" cx="25" cy="5.25" r=".75"/>
+                        ${dots}
+                      </svg>
+                      <div class="court-legend">
+                        <span class="made"><i></i>Made</span>
+                        <span class="miss"><i></i>Missed</span>
+                        <span>${made}/${shots.length} charted</span>
+                      </div>
+                    </div>`;
+                section.style.display = '';
+            } catch (err) { /* decoration: never let it take the page down */ }
+        }
+
         // ── Team filter ──
         function setTeamFilter(t, btn) {
             TEAM_FILTER = t;
@@ -1310,6 +1414,7 @@
         loadStats();
         loadFullStats();
         loadTrends();     // season trends + career highs
+        loadShotChart();  // charted shot locations, hidden when there are none
         initTeamFilter(); // show the per-team toggle if multiple teams are present
         loadGames();      // CFCA upcoming games (Google Sheet schedule)
         loadSchedule();   // upcoming games
