@@ -493,6 +493,33 @@
             transition: max-height 0.6s ease-in;
         }
 
+        /* Link through to the full season page. This strip carries a recruiter-facing
+           summary; /stats is the same season in depth — box scores, splits, shot chart. */
+        .btn-fullstats {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            text-decoration: none;
+            margin: 30px 0 0;
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-left: 5px solid var(--gold);
+            border-radius: 10px;
+            padding: 14px 18px;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+
+        .btn-fullstats:hover { border-color: var(--gold); transform: translateX(3px); }
+
+        .fs-title {
+            font-size: 16px; font-weight: 900; color: #fff;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        .fs-sub { font-size: 12px; color: var(--muted); flex: 1; }
+        .fs-arrow { color: var(--gold); font-size: 20px; font-weight: 900; }
+
         .stats-table-wrapper {
             overflow-x: auto;
             margin: 16px 0 24px;
@@ -728,6 +755,12 @@
             <button data-team="all" class="active" onclick="setTeamFilter('all', this)">All Teams</button>
             <button data-team="CFCA Eagles" onclick="setTeamFilter('CFCA Eagles', this)">CFCA Eagles</button>
         </div>
+
+        <a href="/stats/" class="btn-fullstats">
+            <span class="fs-title">Full Season Stats</span>
+            <span class="fs-sub">Box scores, shooting splits, shot chart and the complete game log</span>
+            <span class="fs-arrow">&rarr;</span>
+        </a>
 
         <div id="stats-section">
             <div class="collapsible-toggle" onclick="togglePanel('stats-panel', this)">

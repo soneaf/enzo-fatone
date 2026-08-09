@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enzo Fatone | Season Stats</title>
+
+    <meta property="og:title" content="Enzo Fatone - 2026-27 Season Stats">
+    <meta property="og:description" content="SG | 6'0 | 185 lbs | Class of 2027 | CFCA Eagles | Box scores, shooting splits and the full game log">
+    <meta property="og:image" content="https://raw.githubusercontent.com/soneaf/enzo-fatone/refs/heads/main/enzo-preview.webp">
+    <meta property="og:url" content="https://enzo-fatone.com/stats">
+    <meta property="og:type" content="website">
+
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏀</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* CFCA Eagles palette — green + Eagles gold. Same values as the
+               recruiting page, so the two read as one site. */
+            --gold: #FFC425;
+            --gold-bright: #FFE748;
+            --navy: #006F51;
+            --navy-dark: #0A130F;
+            --navy-light: #148365;
+            --bg: #0A130F;
+            --card: #0F2A1E;
+            --card-border: #2E8F5B;
+            --text: #F4F6F5;
+            --muted: #C8D8D1;
+            --miss: #e2564a;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding-bottom: 60px;
+        }
+
+        /* ── Header ──
+           Deliberately NOT fixed. The recruiting page pins its header and pays for it
+           with hand-tuned body padding at two breakpoints; this page is long and
+           scroll-heavy, so it just sits at the top and nothing has to be kept in sync. */
+        .vitals {
+            background: var(--gold);
+            color: var(--navy-dark);
+            text-align: center;
+            padding: 8px;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .hero {
+            background: var(--navy);
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .hero-title { text-align: center; }
+
+        h1 {
+            font-size: 30px;
+            font-weight: 900;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            line-height: 1;
+        }
+
+        .subhead {
+            font-size: 13px;
+            font-weight: 400;
+            color: var(--muted);
+            margin: 5px 0 0;
+            letter-spacing: 0.5px;
+        }
+
+        .subhead .accent { color: var(--gold); font-weight: 700; }
+
+        .btn-back {
+            display: inline-block;
+            background: transparent;
+            color: var(--gold);
+            border: 1px solid var(--gold);
+            padding: 9px 22px;
+            text-decoration: none;
+            font-weight: 800;
+            border-radius: 50px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: 0.2s;
+        }
+
+        .btn-back:hover { background: var(--gold); color: var(--navy-dark); }
+
+        /* ── Headline strip ── */
+        .stats-strip {
+            display: flex;
+            justify-content: center;
+            gap: 34px;
+            background: var(--navy);
+            padding: 16px 25px 22px;
+            flex-wrap: wrap;
+            border-bottom: 4px solid var(--gold);
+        }
+
+        .stat-box { text-align: center; min-width: 62px; }
+        .stat-val { font-size: 34px; font-weight: 700; line-height: 1; color: #fff; }
+        .stat-val.accent { color: var(--gold); }
+        .stat-label {
+            font-size: 10px; text-transform: uppercase; color: var(--muted);
+            font-weight: 700; letter-spacing: 1.5px; margin-top: 5px;
+        }
+
+        /* ── Layout ── */
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+        .section-header {
+            border-left: 5px solid var(--gold);
+            padding-left: 15px;
+            margin: 42px 0 8px;
+            text-transform: uppercase;
+            font-size: 22px;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+
+        .section-note {
+            color: var(--muted);
+            font-size: 12.5px;
+            line-height: 1.55;
+            margin: 0 0 18px 20px;
+            max-width: 680px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 18px;
+        }
+
+        /* ── Shooting splits ── */
+        .split-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 14px;
+        }
+
+        .split {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-bottom: 3px solid var(--gold);
+            border-radius: 10px;
+            padding: 16px 18px;
+        }
+
+        .split-name {
+            font-size: 10px; font-weight: 800; letter-spacing: 1.5px;
+            text-transform: uppercase; color: var(--gold); margin-bottom: 8px;
+        }
+        .split-pct { font-size: 30px; font-weight: 900; color: #fff; line-height: 1; }
+        .split-raw { font-size: 12px; color: var(--muted); margin-top: 6px; letter-spacing: .04em; }
+        .split-bar {
+            height: 5px; border-radius: 3px; background: rgba(255,255,255,.12);
+            margin-top: 12px; overflow: hidden;
+        }
+        .split-bar i { display: block; height: 100%; background: var(--gold); border-radius: 3px; }
+
+        .adv-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 14px;
+            margin-top: 14px;
+        }
+        .adv { background: var(--card); border: 1px solid var(--card-border); border-radius: 10px; padding: 16px 18px; }
+        .adv-top { display: flex; align-items: baseline; gap: 10px; }
+        .adv-val { font-size: 28px; font-weight: 900; color: var(--gold); line-height: 1; }
+        .adv-name { font-size: 11px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: #fff; }
+        .adv-desc { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+
+        /* ── Tables ── */
+        .table-wrap {
+            overflow-x: auto;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+        }
+
+        table.stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .stats-table thead { background: var(--navy); }
+
+        .stats-table th {
+            padding: 10px 14px;
+            text-align: center;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--gold);
+            border-bottom: 2px solid var(--gold);
+        }
+
+        .stats-table th:first-child { text-align: left; }
+
+        .stats-table td {
+            padding: 10px 14px;
+            text-align: center;
+            color: var(--text);
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .stats-table td:first-child { text-align: left; font-weight: 700; color: #fff; }
+        .stats-table tbody tr { background: var(--card); transition: background .15s; }
+        .stats-table tbody tr:hover { background: var(--navy-light); }
+        .stats-table tfoot { background: var(--navy); }
+        .stats-table tfoot td {
+            font-weight: 800; color: var(--gold);
+            border-top: 2px solid var(--gold); border-bottom: none;
+        }
+        .stats-table tfoot tr.avg-row td { border-top: 1px solid rgba(255,196,37,.4); color: #fff; }
+
+        /* The game column stays put while twenty stat columns scroll under it — a table
+           whose rows you can't identify is just a grid of numbers. The shadow matters:
+           without it a number half-covered by the frozen column reads as a truncated
+           value rather than one passing underneath. */
+        .log-table td:first-child,
+        .log-table th:first-child {
+            position: sticky; left: 0; z-index: 2;
+            max-width: 210px; overflow: hidden; text-overflow: ellipsis;
+            box-shadow: 6px 0 8px -6px rgba(0,0,0,.8);
+        }
+        .log-table thead th:first-child { background: var(--navy); }
+        .log-table tbody td:first-child { background: var(--card); }
+        .log-table tbody tr:hover td:first-child { background: var(--navy-light); }
+        .log-table tfoot td:first-child { background: var(--navy); }
+
+        .res-w { color: var(--gold); font-weight: 800; }
+        .res-l { color: var(--muted); font-weight: 800; }
+
+        /* ── Totals / averages table ── */
+        .totals-table td:first-child { width: 46%; }
+        .totals-table td { text-align: right; }
+        .totals-table th { text-align: right; }
+        .totals-table th:first-child, .totals-table td:first-child { text-align: left; }
+
+        /* ── Scoring mix ── */
+        .mix-legend {
+            display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;
+            margin-top: 14px; font-size: 12px; color: var(--muted); letter-spacing: .04em;
+        }
+        .mix-legend i {
+            display: inline-block; width: 10px; height: 10px; border-radius: 2px;
+            margin-right: 7px; vertical-align: middle;
+        }
+        .mix-3 { background: var(--gold); }
+        .mix-2 { background: #2E8F5B; }
+        .mix-1 { background: #7FCBA6; }
+
+        /* ── Box score cards ── */
+        details.box {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-left: 5px solid var(--gold);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        details.box[open] { border-color: var(--gold); }
+        details.box > summary {
+            list-style: none; cursor: pointer; user-select: none;
+            padding: 14px 18px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+        }
+        details.box > summary::-webkit-details-marker { display: none; }
+        .box-date { font-size: 11px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: var(--gold); min-width: 74px; }
+        .box-opp { font-size: 15px; font-weight: 700; color: #fff; flex: 1; min-width: 150px; }
+        .box-line { font-size: 13px; color: var(--muted); letter-spacing: .03em; }
+        .box-line b { color: #fff; font-weight: 800; }
+        .box-body { padding: 0 18px 18px; }
+        .box-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
+            gap: 10px; margin-bottom: 14px;
+        }
+        .box-cell {
+            background: rgba(255,255,255,.04); border-radius: 8px; padding: 10px 6px; text-align: center;
+        }
+        .box-cell .v { font-size: 20px; font-weight: 800; color: #fff; line-height: 1; }
+        .box-cell .l { font-size: 9px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); margin-top: 5px; }
+        .box-splits { display: flex; gap: 22px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); letter-spacing: .03em; }
+        .box-splits b { color: var(--gold); font-weight: 800; }
+
+        /* ── Shot chart ──
+           NFHS half court drawn in feet, so the three-point arc is a real arc at any
+           width and a shot's stored 0…1 coordinates map straight onto the viewBox. */
+        .court-wrap {
+            background: var(--card); border: 1px solid var(--card-border); border-radius: 14px;
+            padding: 14px; max-width: 560px; margin: 0 auto;
+        }
+        .court-svg { width: 100%; height: auto; display: block; }
+        .court-line { fill: none; stroke: rgba(255,255,255,.28); stroke-width: .35; }
+        .shot-made { fill: var(--gold); }
+        .shot-miss { fill: none; stroke: var(--miss); stroke-width: .45; }
+        .court-legend {
+            display: flex; gap: 18px; justify-content: center; align-items: center;
+            margin-top: 12px; font-size: 12px; color: var(--muted); letter-spacing: .04em; flex-wrap: wrap;
+        }
+        .court-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+        .court-legend .made i { background: var(--gold); }
+        .court-legend .miss i { border: 1.5px solid var(--miss); }
+
+        .pill-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
+        .pill {
+            background: var(--card); border: 1px solid var(--card-border); color: var(--muted);
+            font-weight: 700; font-size: .78rem; letter-spacing: .05em; text-transform: uppercase;
+            padding: 7px 15px; border-radius: 999px; cursor: pointer; transition: all .14s;
+        }
+        .pill:hover { border-color: var(--gold); color: #fff; }
+        .pill.active { background: var(--gold); color: var(--navy); border-color: var(--gold); }
+
+        .zone-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 16px; }
+        .zone { background: var(--card); border: 1px solid var(--card-border); border-radius: 10px; padding: 13px 15px; text-align: center; }
+        .zone .zn { font-size: 10px; font-weight: 800; letter-spacing: 1.3px; text-transform: uppercase; color: var(--gold); }
+        .zone .zv { font-size: 22px; font-weight: 900; color: #fff; margin-top: 6px; line-height: 1; }
+        .zone .zr { font-size: 11.5px; color: var(--muted); margin-top: 5px; }
+
+        /* ── Empty / loading / error ── */
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 46px 30px;
+            text-align: center;
+            max-width: 720px;
+            margin: 40px auto;
+        }
+        .panel h2 {
+            font-size: 21px; font-weight: 900; text-transform: uppercase;
+            letter-spacing: 1px; color: #fff; margin-bottom: 12px;
+        }
+        .panel p { color: var(--muted); font-size: 14px; line-height: 1.65; margin: 0 auto 10px; max-width: 480px; }
+        .panel .tip { font-size: 12.5px; color: var(--card-border); margin-top: 20px; }
+        .panel a { color: var(--gold); text-decoration: none; font-weight: 700; }
+        .panel a:hover { text-decoration: underline; }
+
+        .spinner {
+            width: 36px; height: 36px;
+            border: 3px solid var(--card-border);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin .8s linear infinite;
+            margin: 0 auto 18px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn .4s ease-out both; }
+
+        /* ── Footer ── */
+        .footer {
+            background: var(--navy);
+            border-top: 1px solid var(--card-border);
+            padding: 20px;
+            text-align: center;
+            margin-top: 50px;
+        }
+        .footer-info { font-size: 12px; color: var(--muted); font-weight: 500; }
+        .footer-info span { margin: 0 8px; color: var(--card-border); }
+        .footer-info a { color: #fff; text-decoration: none; transition: .2s; }
+        .footer-info a:hover { color: var(--gold); }
+        .footer .copyright { font-size: 9px; color: var(--card-border); margin-top: 10px; }
+        .footer .updated { font-size: 10px; color: var(--card-border); margin-top: 6px; letter-spacing: .06em; text-transform: uppercase; }
+
+        /* ── Mobile ── */
+        @media (max-width: 768px) {
+            .hero { flex-direction: column; gap: 12px; padding: 16px 14px; }
+            h1 { font-size: 24px; }
+            .stats-strip { gap: 18px; padding: 14px 12px 18px; }
+            .stat-val { font-size: 27px; }
+            .section-header { font-size: 19px; margin-top: 34px; }
+            .section-note { margin-left: 20px; }
+            .container { padding: 16px 12px; }
+            /* A 375px screen has no room for a 210px frozen column and any stats. */
+            .log-table td:first-child, .log-table th:first-child { max-width: 128px; }
+            .stats-table td, .stats-table th { padding: 9px 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="vitals">SG &nbsp;|&nbsp; 6'0" &nbsp;|&nbsp; 185 LBS &nbsp;|&nbsp; CLASS OF 2027 &nbsp;|&nbsp; CFCA EAGLES</div>
+    <div class="hero">
+        <div class="hero-title">
+            <h1>Season Stats</h1>
+            <div class="subhead">Enzo Fatone &nbsp;|&nbsp; <span class="accent">2026-27 &middot; CFCA Eagles</span></div>
+        </div>
+        <a href="/basketball" class="btn-back">&larr; Recruiting Profile</a>
+    </div>
+
+    <div class="stats-strip" id="strip" style="display:none;"></div>
+
+    <!-- One of these three is shown; the other two stay hidden. -->
+    <div id="loading" class="panel">
+        <div class="spinner"></div>
+        <p>Loading the season&hellip;</p>
+    </div>
+
+    <div id="empty" class="panel" style="display:none;">
+        <h2>The season hasn't tipped off yet</h2>
+        <p>Enzo's senior year with the CFCA Eagles begins this fall. There are no games on
+           the board yet, so there is nothing to average.</p>
+        <p>Every game is scored live from the bench, and this page reads that same record
+           directly &mdash; so the moment the first final whistle goes, the box score,
+           shooting splits and shot chart appear here on their own.</p>
+        <p class="tip">Check the <a href="/basketball">recruiting profile</a> for film,
+           upcoming games and tournaments.</p>
+    </div>
+
+    <div id="failed" class="panel" style="display:none;">
+        <h2>Stats are unavailable right now</h2>
+        <p>The season record couldn't be reached. This is almost always temporary &mdash;
+           try again in a few minutes.</p>
+        <p class="tip"><a href="/basketball">Back to the recruiting profile</a></p>
+    </div>
+
+    <div id="content" style="display:none;">
+        <div class="container">
+            <h2 class="section-header">Shooting</h2>
+            <p class="section-note">
+                Every percentage on this page is worked out from total makes over total
+                attempts across the season &mdash; never by averaging the game-by-game
+                percentages, which is a different and wrong number.
+            </p>
+            <div class="split-grid" id="splits"></div>
+            <div class="adv-grid" id="advanced"></div>
+
+            <h2 class="section-header">Season Totals</h2>
+            <p class="section-note">
+                Totals for the year and what they come to per game. Field goals here
+                include three-pointers, the way a box score counts them.
+            </p>
+            <div class="table-wrap"><table class="stats-table totals-table" id="totals"></table></div>
+
+            <h2 class="section-header">How He Scores</h2>
+            <p class="section-note">
+                Each bar is one game, split by where the points came from: free throws,
+                two-pointers and threes.
+            </p>
+            <div class="card" id="mix"></div>
+
+            <h2 class="section-header">Game Log</h2>
+            <p class="section-note">
+                One row per game, with the totals and per-game averages underneath. Scroll
+                the table sideways &mdash; the opponent column stays put.
+            </p>
+            <div class="table-wrap"><table class="stats-table log-table" id="log"></table></div>
+
+            <h2 class="section-header">Box Scores</h2>
+            <p class="section-note">Tap a game for the full line.</p>
+            <div id="boxes"></div>
+
+            <div id="shots-section" style="display:none;">
+                <h2 class="section-header">Shot Chart</h2>
+                <p class="section-note">
+                    Where the shots came from. Only shots placed on the court while scoring
+                    appear here, so this is a sample of the season's attempts rather than
+                    all of them &mdash; the percentages above are the complete record.
+                    Free throws are not charted.
+                </p>
+                <div class="pill-row" id="shot-filter"></div>
+                <div class="court-wrap" id="court"></div>
+                <div class="zone-grid" id="zones"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="footer-info">
+            <a href="tel:4074485468">407-448-5468</a><span>&bull;</span><a href="mailto:enzo.fatone4@gmail.com">enzo.fatone4@gmail.com</a>
+        </div>
+        <div class="updated" id="updated"></div>
+        <div class="copyright">&copy; 2026 Enzo Fatone Recruiting.</div>
+    </div>
+
+    <script>
+        // ── Where the numbers come from ──
+        //
+        // Straight from the stat tracker's database. A game is scored on the bench and
+        // this page shows it — there is no export step and no spreadsheet in between.
+        //
+        // The key below is the *publishable* key and is meant to be public. The
+        // protection is not the key, it is that the key reaches exactly three read-only
+        // views and nothing else: the base tables are closed to it. Adding a fourth view
+        // or a column to an existing one is a security decision, not a rendering one —
+        // see HANDOFF.md before reaching for one.
+        const SB_URL = 'https://wzmtpvqbngevlcelolor.supabase.co/rest/v1';
+        const SB_KEY = 'sb_publishable_JM6iroSzSRt2ZixD_D7Iog_ce1TmVOa';
+
+        // Throws on anything but a 2xx, so "the season hasn't started" and "the request
+        // failed" stay two different states on screen. An empty season is not an error.
+        async function sb(view, query = '') {
+            const r = await fetch(`${SB_URL}/${view}?select=*${query}`, { headers: { apikey: SB_KEY } });
+            if (!r.ok) throw new Error(`${view} -> HTTP ${r.status}`);
+            return r.json();
+        }
+
+        // ── Rates ──
+        //
+        // One helper for every percentage on the page, and it only ever divides a sum of
+        // makes by a sum of attempts. The spreadsheet this system replaced averaged the
+        // per-game percentages instead and reported a season true-shooting figure of
+        // 232% — arithmetically impossible, and the reason this is the only path.
+        const rate = (made, att) => (att > 0 ? (made / att * 100).toFixed(1) + '%' : '—');
+        // Percentages already computed in SQL arrive as a 0…1 fraction.
+        const frac = (v) => (v == null ? '—' : (Number(v) * 100).toFixed(1) + '%');
+        const avg = (total, n) => (n > 0 ? (total / n).toFixed(1) : '0.0');
+        const sum = (rows, k) => rows.reduce((a, r) => a + (Number(r[k]) || 0), 0);
+
+        const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        // played_on is a plain date. Split the string rather than letting Date parse it —
+        // `new Date('2026-11-14')` is UTC midnight and renders as the 13th west of
+        // Greenwich, which is exactly the off-by-one-day bug this system was built to end.
+        function shortDate(iso) {
+            const [y, m, d] = String(iso || '').split('-').map(n => parseInt(n, 10));
+            return (m && d) ? `${MON[m - 1]} ${d}` : '';
+        }
+        const oppLabel = (g) => `${g.is_home ? 'vs' : '@'} ${g.opponent_name || 'Opponent'}`;
+        const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g,
+            c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+        // Two-pointers, derived. In the database `fgm`/`fga` count every shot worth 2 or
+        // 3, so a made three IS a made field goal; subtracting the threes is what leaves
+        // the twos. (The recruiting page's adapter does the same subtraction for the
+        // opposite reason — its column names came from a sheet where FGM meant twos.)
+        const twos = (r) => ({ m: (r.fgm || 0) - (r.fg3m || 0), a: (r.fga || 0) - (r.fg3a || 0) });
+
+        // ── Court geometry — identical to CourtView.swift in the app ──
+        const COURT_W = 50, COURT_L = 47, HOOP_X = 25, HOOP_Y = 5.25;
+        const LANE_HALF = 6, LANE_LEN = 19;   // 12ft lane, 19ft to the free-throw line
+
+        // A shot's zone. The recorded shot value decides two-vs-three, never the
+        // coordinates: the scorer taps the value and the app warns if the spot disagrees,
+        // so the value is the one that was actually scored.
+        function zoneOf(s) {
+            if (s.shot_value === 3) return 'three';
+            const fx = s.court_x * COURT_W, fy = s.court_y * COURT_L;
+            const inLane = Math.abs(fx - HOOP_X) <= LANE_HALF && fy <= LANE_LEN;
+            return inLane ? 'paint' : 'mid';
+        }
+
+        // ── Render ──
+
+        function renderStrip(t, games) {
+            const gp = t.gp || 0;
+            const cells = [
+                ['PPG', Number(t.ppg ?? 0).toFixed(1), true],
+                ['RPG', Number(t.rpg ?? 0).toFixed(1)],
+                ['APG', Number(t.apg ?? 0).toFixed(1)],
+                ['SPG', avg(sum(games, 'stl'), gp)],
+                ['BPG', avg(sum(games, 'blk'), gp)],
+                ['FG%', frac(t.fg_pct)],
+                ['GP',  String(gp)],
+                ['REC', `${t.wins || 0}-${t.losses || 0}`],
+            ];
+            document.getElementById('strip').innerHTML = cells.map(([l, v, a]) =>
+                `<div class="stat-box"><div class="stat-val${a ? ' accent' : ''}">${v}</div>` +
+                `<div class="stat-label">${l}</div></div>`).join('');
+            document.getElementById('strip').style.display = 'flex';
+        }
+
+        function renderSplits(t) {
+            const two = twos(t);
+            const rows = [
+                ['Field Goals', t.fgm, t.fga, frac(t.fg_pct)],
+                ['Two-Pointers', two.m, two.a, rate(two.m, two.a)],
+                ['Three-Pointers', t.fg3m, t.fg3a, frac(t.fg3_pct)],
+                ['Free Throws', t.ftm, t.fta, frac(t.ft_pct)],
+            ];
+            document.getElementById('splits').innerHTML = rows.map(([name, m, a, pct]) => {
+                const w = a > 0 ? Math.min(100, (m / a) * 100) : 0;
+                return `<div class="split">
+                    <div class="split-name">${name}</div>
+                    <div class="split-pct">${pct}</div>
+                    <div class="split-raw">${m || 0} of ${a || 0}</div>
+                    <div class="split-bar"><i style="width:${w.toFixed(1)}%"></i></div>
+                </div>`;
+            }).join('');
+
+            // eFG% and TS% come out of the database already computed from summed makes
+            // and attempts. They are repeated in words because they are the two numbers a
+            // family member is least likely to know, and the two a coach looks at first.
+            document.getElementById('advanced').innerHTML = [
+                ['eFG%', frac(t.efg_pct),
+                 'Effective field goal percentage &mdash; shooting percentage adjusted for the fact that a three is worth more than a two.'],
+                ['TS%', frac(t.ts_pct),
+                 'True shooting percentage &mdash; scoring efficiency counting twos, threes and free throws together.'],
+            ].map(([n, v, d]) => `<div class="adv">
+                <div class="adv-top"><span class="adv-val">${v}</span><span class="adv-name">${n}</span></div>
+                <div class="adv-desc">${d}</div>
+            </div>`).join('');
+        }
+
+        function renderTotals(t, games) {
+            const gp = t.gp || 0;
+            const two = twos(t);
+            const S = (k) => sum(games, k);
+            // Counting stats the season view doesn't carry are summed from the game log.
+            // Summing counts is safe; only rates are ever at risk of being averaged.
+            const rows = [
+                ['Points', t.points, avg(t.points, gp)],
+                ['Rebounds', t.reb, avg(t.reb, gp)],
+                ['&nbsp;&nbsp;Offensive', S('oreb'), avg(S('oreb'), gp)],
+                ['&nbsp;&nbsp;Defensive', S('dreb'), avg(S('dreb'), gp)],
+                ['Assists', t.ast, avg(t.ast, gp)],
+                ['Steals', S('stl'), avg(S('stl'), gp)],
+                ['Blocks', S('blk'), avg(S('blk'), gp)],
+                ['Turnovers', S('tov'), avg(S('tov'), gp)],
+                ['Personal Fouls', S('pf'), avg(S('pf'), gp)],
+                ['Field Goals Made', t.fgm, avg(t.fgm, gp)],
+                ['Field Goals Attempted', t.fga, avg(t.fga, gp)],
+                ['Two-Pointers Made', two.m, avg(two.m, gp)],
+                ['Two-Pointers Attempted', two.a, avg(two.a, gp)],
+                ['Threes Made', t.fg3m, avg(t.fg3m, gp)],
+                ['Threes Attempted', t.fg3a, avg(t.fg3a, gp)],
+                ['Free Throws Made', t.ftm, avg(t.ftm, gp)],
+                ['Free Throws Attempted', t.fta, avg(t.fta, gp)],
+            ];
+            document.getElementById('totals').innerHTML =
+                `<thead><tr><th>Stat</th><th>Total</th><th>Per Game</th></tr></thead><tbody>` +
+                rows.map(([n, tot, per]) => `<tr><td>${n}</td><td>${tot || 0}</td><td>${per}</td></tr>`).join('') +
+                `</tbody><tfoot><tr><td>Games Played</td><td>${gp}</td><td>${t.wins || 0}-${t.losses || 0}</td></tr></tfoot>`;
+        }
+
+        // Per-game points, stacked by how they were scored. Checks out against the game's
+        // total by construction: FTM + 2×(FGM − 3PM) + 3×3PM is the points column.
+        function renderMix(games) {
+            const colW = 46, barW = 26, top = 22, area = 150, base = top + area, svgH = base + 28;
+            const maxP = Math.max(10, ...games.map(g => g.points || 0));
+            const svgW = Math.max(games.length * colW, colW);
+            let bars = '';
+            games.forEach((g, i) => {
+                const x = i * colW + colW / 2;
+                const two = twos(g);
+                const parts = [
+                    [(g.ftm || 0) * 1, '#7FCBA6'],
+                    [two.m * 2, '#2E8F5B'],
+                    [(g.fg3m || 0) * 3, '#FFC425'],
+                ];
+                let y = base;
+                parts.forEach(([pts, fill]) => {
+                    if (pts <= 0) return;
+                    const h = (pts / maxP) * area;
+                    y -= h;
+                    bars += `<rect x="${(x - barW / 2).toFixed(1)}" y="${y.toFixed(1)}" width="${barW}" height="${h.toFixed(1)}" fill="${fill}"/>`;
+                });
+                bars += `<text x="${x}" y="${(y - 6).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="700" fill="#F4F6F5">${g.points || 0}</text>`;
+                const lbl = (String(g.opponent_name || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 3).toUpperCase()) || ('G' + (i + 1));
+                bars += `<text x="${x}" y="${base + 17}" text-anchor="middle" font-size="10" fill="#C8D8D1">${esc(lbl)}</text>`;
+            });
+            document.getElementById('mix').innerHTML =
+                `<div style="overflow-x:auto;text-align:center;">
+                   <svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}" style="display:inline-block;max-width:100%;">${bars}</svg>
+                 </div>
+                 <div class="mix-legend">
+                   <span><i class="mix-3"></i>Threes</span>
+                   <span><i class="mix-2"></i>Twos</span>
+                   <span><i class="mix-1"></i>Free throws</span>
+                 </div>`;
+        }
+
+        function renderLog(games, t) {
+            // One list drives the header, every row and both footers. Three parallel
+            // stacks of markup drift the first time a column is inserted, and a
+            // mislabelled stat column is worse than no table at all.
+            const cols = [
+                { h: 'Game',  v: g => `${shortDate(g.played_on)} ${esc(oppLabel(g))}` },
+                { h: 'W/L',   v: g => g.result === 'W'
+                        ? `<span class="res-w">W ${g.team_score}-${g.opponent_score}</span>`
+                        : g.result === 'L'
+                            ? `<span class="res-l">L ${g.team_score}-${g.opponent_score}</span>`
+                            : `T ${g.team_score}-${g.opponent_score}` },
+                { h: 'PTS',   k: 'points' },
+                { h: 'FGM',   k: 'fgm' },
+                { h: 'FGA',   k: 'fga' },
+                { h: 'FG%',   v: g => rate(g.fgm, g.fga), pct: ['fgm', 'fga'] },
+                { h: '3PM',   k: 'fg3m' },
+                { h: '3PA',   k: 'fg3a' },
+                { h: '3P%',   v: g => rate(g.fg3m, g.fg3a), pct: ['fg3m', 'fg3a'] },
+                { h: 'FTM',   k: 'ftm' },
+                { h: 'FTA',   k: 'fta' },
+                { h: 'FT%',   v: g => rate(g.ftm, g.fta), pct: ['ftm', 'fta'] },
+                { h: 'REB',   k: 'reb' },
+                { h: 'OR',    k: 'oreb' },
+                { h: 'DR',    k: 'dreb' },
+                { h: 'AST',   k: 'ast' },
+                { h: 'STL',   k: 'stl' },
+                { h: 'BLK',   k: 'blk' },
+                { h: 'TO',    k: 'tov' },
+                { h: 'PF',    k: 'pf' },
+            ];
+            const gp = games.length;
+            let html = '<thead><tr>' + cols.map(c => `<th>${c.h}</th>`).join('') + '</tr></thead><tbody>';
+            games.forEach(g => {
+                html += '<tr>' + cols.map(c =>
+                    `<td>${c.v ? c.v(g) : (g[c.k] ?? 0)}</td>`).join('') + '</tr>';
+            });
+            // Totals row: counts are summed, percentages are summed-makes over
+            // summed-attempts. Averaging the column above would be the classic error.
+            html += '</tbody><tfoot><tr>';
+            cols.forEach((c, i) => {
+                if (i === 0) html += '<td>Total</td>';
+                else if (c.h === 'W/L') html += `<td>${t.wins || 0}-${t.losses || 0}</td>`;
+                else if (c.pct) html += `<td>${rate(sum(games, c.pct[0]), sum(games, c.pct[1]))}</td>`;
+                else html += `<td>${sum(games, c.k)}</td>`;
+            });
+            html += '</tr><tr class="avg-row">';
+            cols.forEach((c, i) => {
+                if (i === 0) html += `<td>Per game (${gp})</td>`;
+                else if (c.h === 'W/L') html += '<td></td>';
+                else if (c.pct) html += '<td></td>';   // a rate has no per-game average
+                else html += `<td>${avg(sum(games, c.k), gp)}</td>`;
+            });
+            html += '</tr></tfoot>';
+            document.getElementById('log').innerHTML = html;
+        }
+
+        function renderBoxes(games) {
+            // Newest first — the game people came to read about is the last one played.
+            const ordered = games.slice().reverse();
+            document.getElementById('boxes').innerHTML = ordered.map(g => {
+                const two = twos(g);
+                const cells = [
+                    ['PTS', g.points], ['REB', g.reb], ['AST', g.ast], ['STL', g.stl],
+                    ['BLK', g.blk], ['TO', g.tov], ['PF', g.pf],
+                    ['OR', g.oreb], ['DR', g.dreb],
+                ];
+                const tsDen = 2 * ((g.fga || 0) + 0.44 * (g.fta || 0));
+                const ts = tsDen > 0 ? ((g.points || 0) / tsDen * 100).toFixed(1) + '%' : '—';
+                const efg = (g.fga || 0) > 0
+                    ? (((g.fgm || 0) + 0.5 * (g.fg3m || 0)) / g.fga * 100).toFixed(1) + '%' : '—';
+                const res = g.result === 'W' ? 'res-w' : g.result === 'L' ? 'res-l' : '';
+                return `<details class="box">
+                    <summary>
+                        <span class="box-date">${shortDate(g.played_on)}</span>
+                        <span class="box-opp">${esc(oppLabel(g))}</span>
+                        <span class="box-line"><span class="${res}">${g.result} ${g.team_score}-${g.opponent_score}</span>
+                            &nbsp;&middot;&nbsp; <b>${g.points || 0}</b> pts,
+                            <b>${g.reb || 0}</b> reb, <b>${g.ast || 0}</b> ast</span>
+                    </summary>
+                    <div class="box-body">
+                        <div class="box-grid">${cells.map(([l, v]) =>
+                            `<div class="box-cell"><div class="v">${v ?? 0}</div><div class="l">${l}</div></div>`).join('')}
+                        </div>
+                        <div class="box-splits">
+                            <span>FG <b>${g.fgm || 0}-${g.fga || 0}</b> (${rate(g.fgm, g.fga)})</span>
+                            <span>2PT <b>${two.m}-${two.a}</b> (${rate(two.m, two.a)})</span>
+                            <span>3PT <b>${g.fg3m || 0}-${g.fg3a || 0}</b> (${rate(g.fg3m, g.fg3a)})</span>
+                            <span>FT <b>${g.ftm || 0}-${g.fta || 0}</b> (${rate(g.ftm, g.fta)})</span>
+                            <span>eFG% <b>${efg}</b></span>
+                            <span>TS% <b>${ts}</b></span>
+                        </div>
+                    </div>
+                </details>`;
+            }).join('');
+        }
+
+        // ── Shot chart, with a per-game filter ──
+        let ALL_SHOTS = [], SHOT_GAMES = [], SHOT_PICK = 'all';
+
+        function drawCourt() {
+            const shots = (SHOT_PICK === 'all' ? ALL_SHOTS : ALL_SHOTS.filter(s => s.played_on === SHOT_PICK));
+            const dots = shots.map(s => {
+                const x = (s.court_x * COURT_W).toFixed(2), y = (s.court_y * COURT_L).toFixed(2);
+                return `<circle class="${s.shot_made ? 'shot-made' : 'shot-miss'}" cx="${x}" cy="${y}" r=".62"/>`;
+            }).join('');
+            const made = shots.filter(s => s.shot_made).length;
+
+            document.getElementById('court').innerHTML = `
+                <svg class="court-svg" viewBox="-1 -1 52 49" preserveAspectRatio="xMidYMid meet">
+                  <rect class="court-line" x="0" y="0" width="50" height="47"/>
+                  <rect class="court-line" x="19" y="0" width="12" height="19"/>
+                  <circle class="court-line" cx="25" cy="19" r="6"/>
+                  <path   class="court-line" d="M 5.25 0 L 5.25 5.25 A 19.75 19.75 0 0 0 44.75 5.25 L 44.75 0"/>
+                  <line   class="court-line" x1="22" y1="4" x2="28" y2="4"/>
+                  <circle class="court-line" cx="25" cy="5.25" r=".75"/>
+                  ${dots}
+                </svg>
+                <div class="court-legend">
+                  <span class="made"><i></i>Made</span>
+                  <span class="miss"><i></i>Missed</span>
+                  <span>${made}/${shots.length} charted</span>
+                </div>`;
+
+            const zones = [['paint', 'In the Paint'], ['mid', 'Mid-Range'], ['three', 'Three-Point']];
+            document.getElementById('zones').innerHTML = zones.map(([key, name]) => {
+                const inZone = shots.filter(s => zoneOf(s) === key);
+                const m = inZone.filter(s => s.shot_made).length;
+                return `<div class="zone">
+                    <div class="zn">${name}</div>
+                    <div class="zv">${rate(m, inZone.length)}</div>
+                    <div class="zr">${m} of ${inZone.length} charted</div>
+                </div>`;
+            }).join('');
+        }
+
+        function pickShotGame(v, btn) {
+            SHOT_PICK = v;
+            document.querySelectorAll('#shot-filter .pill').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            drawCourt();
+        }
+
+        function renderShots(shots, games) {
+            const section = document.getElementById('shots-section');
+            // Free throws are never placed on the court by the scorer, but filter anyway
+            // rather than trust it — a stray one-pointer would sit under the hoop and
+            // quietly inflate the paint percentage.
+            ALL_SHOTS = shots.filter(s => s.shot_value >= 2 && s.court_x != null && s.court_y != null);
+            if (!ALL_SHOTS.length) return;   // stays hidden until something is charted
+
+            const dates = [...new Set(ALL_SHOTS.map(s => s.played_on))].sort();
+            SHOT_GAMES = dates.map(d => {
+                const g = games.find(x => x.played_on === d);
+                return { d, label: g ? `${shortDate(d)} ${oppLabel(g)}` : shortDate(d) };
+            });
+
+            const filter = document.getElementById('shot-filter');
+            if (SHOT_GAMES.length > 1) {
+                filter.innerHTML = `<button class="pill active" onclick="pickShotGame('all', this)">Full Season</button>` +
+                    SHOT_GAMES.map(g =>
+                        `<button class="pill" onclick="pickShotGame('${g.d}', this)">${esc(g.label)}</button>`).join('');
+            } else {
+                filter.style.display = 'none';
+            }
+
+            section.style.display = 'block';
+            drawCourt();
+        }
+
+        // ── Load ──
+        async function load() {
+            const show = (id) => { document.getElementById(id).style.display = 'block'; };
+            const hide = (id) => { document.getElementById(id).style.display = 'none'; };
+            try {
+                // Three requests, and only these three. The game log is ordered oldest
+                // first so the charts read left-to-right through the season.
+                const [totalsRows, games, shots] = await Promise.all([
+                    sb('public_season_totals'),
+                    sb('public_game_log', '&order=played_on.asc'),
+                    sb('public_shots', '&order=played_on.asc'),
+                ]);
+
+                const t = totalsRows[0];
+                hide('loading');
+
+                // No games is the correct state before November, not a failure. The
+                // totals view always returns exactly one row, zeroed, so gp is the test.
+                if (!t || !t.gp || !games.length) { show('empty'); return; }
+
+                renderStrip(t, games);
+                renderSplits(t);
+                renderTotals(t, games);
+                renderMix(games);
+                renderLog(games, t);
+                renderBoxes(games);
+                renderShots(shots, games);
+
+                const last = games[games.length - 1];
+                document.getElementById('updated').textContent =
+                    `Through ${shortDate(last.played_on)} ${oppLabel(last)}`;
+
+                const c = document.getElementById('content');
+                c.style.display = 'block';
+                c.classList.add('fade-in');
+            } catch (err) {
+                console.warn('Season stats unavailable:', err);
+                hide('loading');
+                show('failed');
+            }
+        }
+
+        load();
+    </script>
+</body>
+</html>
