@@ -324,6 +324,35 @@
         .court-legend .made i { background: var(--gold); }
         .court-legend .miss i { border: 1.5px solid var(--miss); }
 
+        /* A live game gets the loudest thing on the page, and only while it is live. */
+        .live-card {
+            max-width: 760px; margin: 0 auto 28px; padding: 18px 20px;
+            background: linear-gradient(135deg, #0b3d2e 0%, #06251c 100%);
+            border: 1px solid var(--gold); border-radius: 14px; text-align: center;
+        }
+        .live-badge {
+            display: inline-flex; align-items: center; gap: 7px;
+            font-size: 11px; font-weight: 800; letter-spacing: 1.4px; color: #ffd75e;
+            margin-bottom: 10px;
+        }
+        .live-dot {
+            width: 8px; height: 8px; border-radius: 50%; background: #ff4d4d;
+            animation: livepulse 1.6s ease-in-out infinite;
+        }
+        @keyframes livepulse { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+        /* Respects a reduced-motion preference rather than blinking regardless. */
+        @media (prefers-reduced-motion: reduce) { .live-dot { animation: none; } }
+        .live-score { font-size: 40px; font-weight: 900; color: #fff; line-height: 1.05; }
+        .live-teams { font-size: 13px; color: #cfe3d9; margin-top: 4px; }
+        .live-line { font-size: 13px; color: #ffd75e; margin-top: 10px; font-weight: 700; }
+        .live-stale { font-size: 11.5px; color: #f0a; margin-top: 8px; }
+        .live-foot { font-size: 11px; color: #9fb8ae; margin-top: 8px; }
+        .sched-when { white-space: nowrap; }
+        .sched-opp { font-weight: 700; color: #fff; }
+        .sched-where { color: var(--muted); font-size: 12.5px; }
+        .sched-where a { color: var(--gold); text-decoration: none; }
+        .sched-where a:hover { text-decoration: underline; }
+
         .pill-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
         .pill {
             background: var(--card); border: 1px solid var(--card-border); color: var(--muted);
@@ -411,6 +440,8 @@
         <a href="/basketball" class="btn-back">&larr; Recruiting Profile</a>
     </div>
 
+    <div id="live" style="display:none;"></div>
+
     <div class="stats-strip" id="strip" style="display:none;"></div>
 
     <!-- One of these three is shown; the other two stay hidden. -->
@@ -435,6 +466,19 @@
         <p>The season record couldn't be reached. This is almost always temporary &mdash;
            try again in a few minutes.</p>
         <p class="tip"><a href="/basketball">Back to the recruiting profile</a></p>
+    </div>
+
+    <!-- Outside #content on purpose: the schedule is the most useful thing on the page
+         before a single game has been played, so it must render in the empty state too. -->
+    <div id="schedule-section" style="display:none;">
+        <div class="container">
+            <h2 class="section-header">Upcoming</h2>
+            <p class="section-note">
+                Dates and venues as they stand. Games move &mdash; check with the school
+                before travelling.
+            </p>
+            <div class="table-wrap"><table class="stats-table" id="schedule"></table></div>
+        </div>
     </div>
 
     <div id="content" style="display:none;">
@@ -852,20 +896,119 @@
         }
 
         // ── Load ──
+
+        // ── Live game ──
+        //
+        // Polled rather than pushed. A websocket would mean opening realtime to anonymous
+        // visitors, which is a far wider exposure than a read-only view for a number that
+        // moves every couple of minutes.
+        //
+        // The freshness line is the point: a score that hasn't changed because nobody has
+        // scored must look different from one that hasn't changed because the scorer's
+        // phone lost signal. Same reasoning as the app's own link badge.
+        const LIVE_POLL_MS = 25000;
+        const LIVE_STALE_MS = 4 * 60 * 1000;
+
+        function periodLabel(period, format) {
+            const regulation = format === 'halves' ? 2 : 4;
+            if (period > regulation) {
+                const ot = period - regulation;
+                return ot === 1 ? 'OT' : 'OT' + ot;
+            }
+            return (format === 'halves' ? 'H' : 'Q') + period;
+        }
+
+        function renderLive(g) {
+            const el = document.getElementById('live');
+            if (!g) { el.style.display = 'none'; el.innerHTML = ''; return; }
+
+            const us = g.is_home ? 'CFCA' : 'CFCA';
+            const stale = g.last_event_at
+                && (Date.now() - new Date(g.last_event_at).getTime()) > LIVE_STALE_MS;
+            const mins = g.last_event_at
+                ? Math.max(1, Math.round((Date.now() - new Date(g.last_event_at).getTime()) / 60000))
+                : null;
+
+            el.innerHTML = `
+              <div class="live-card">
+                <div class="live-badge"><span class="live-dot"></span>LIVE &middot; ${esc(periodLabel(g.period, g.format))}</div>
+                <div class="live-score">${g.team_score ?? 0} &ndash; ${g.opponent_score ?? 0}</div>
+                <div class="live-teams">${esc(us)} ${g.is_home ? 'vs' : 'at'} ${esc(g.opponent_name || 'Opponent')}</div>
+                <div class="live-line">Enzo: ${g.points} pts &middot; ${g.reb} reb &middot; ${g.ast} ast &middot; ${g.stl} stl</div>
+                ${stale ? `<div class="live-stale">No update for ${mins} min &mdash; the score may be behind.</div>` : ''}
+                <div class="live-foot">Scored live from the bench. Refreshes every ${LIVE_POLL_MS / 1000}s.</div>
+              </div>`;
+            el.style.display = 'block';
+        }
+
+        async function pollLive() {
+            try {
+                const rows = await sb('public_live_game');
+                renderLive(rows[0] || null);
+            } catch (err) {
+                // A failed poll leaves whatever was last shown rather than blanking it —
+                // and never claims a game is live when the request didn't come back.
+                console.warn('Live score unavailable:', err);
+            }
+        }
+
+        // ── Upcoming ──
+        function renderSchedule(rows) {
+            if (!rows.length) return;
+            const body = rows.map((g) => {
+                const where = [g.location, g.address].filter(Boolean);
+                const maps = g.address
+                    ? `<a href="https://maps.apple.com/?q=${encodeURIComponent(g.address)}"
+                          target="_blank" rel="noopener">${esc(g.location || 'Directions')}</a>`
+                    : esc(g.location || '');
+                return `<tr>
+                    <td class="sched-when">${esc(longDate(g.played_on))}${g.tip_off ? ' &middot; ' + esc(clockLabel(g.tip_off)) : ''}</td>
+                    <td class="sched-opp">${g.is_home ? 'vs' : '@'} ${esc(g.opponent_name)}${g.event_name ? ' <span class="sched-where">&middot; ' + esc(g.event_name) + '</span>' : ''}</td>
+                    <td class="sched-where">${maps || '&mdash;'}</td>
+                </tr>`;
+            }).join('');
+            document.getElementById('schedule').innerHTML =
+                `<thead><tr><th>When</th><th>Opponent</th><th>Where</th></tr></thead><tbody>${body}</tbody>`;
+            document.getElementById('schedule-section').style.display = 'block';
+        }
+
+        function longDate(iso) {
+            const [y, m, d] = iso.split('-').map(Number);
+            return new Date(y, m - 1, d).toLocaleDateString('en-US',
+                { weekday: 'short', month: 'short', day: 'numeric' });
+        }
+
+        /** "19:00" -> "7:00 PM". The database stores 24-hour; nobody reads a schedule that way. */
+        function clockLabel(hhmm) {
+            const [h, m] = hhmm.split(':').map(Number);
+            if (Number.isNaN(h)) return hhmm;
+            const suffix = h >= 12 ? 'PM' : 'AM';
+            const hour = h % 12 === 0 ? 12 : h % 12;
+            return `${hour}:${String(m).padStart(2, '0')} ${suffix}`;
+        }
+
         async function load() {
             const show = (id) => { document.getElementById(id).style.display = 'block'; };
             const hide = (id) => { document.getElementById(id).style.display = 'none'; };
             try {
                 // Three requests, and only these three. The game log is ordered oldest
                 // first so the charts read left-to-right through the season.
-                const [totalsRows, games, shots] = await Promise.all([
+                const [totalsRows, games, shots, schedule, live] = await Promise.all([
                     sb('public_season_totals'),
                     sb('public_game_log', '&order=played_on.asc'),
                     sb('public_shots', '&order=played_on.asc'),
+                    sb('public_schedule'),
+                    sb('public_live_game'),
                 ]);
 
                 const t = totalsRows[0];
                 hide('loading');
+
+                // Both render before the empty-season check: a page with no finals but a
+                // full schedule should show the schedule, not a bare "nothing here yet".
+                renderLive(live[0] || null);
+                renderSchedule(schedule);
+                setInterval(pollLive, LIVE_POLL_MS);
 
                 // No games is the correct state before November, not a failure. The
                 // totals view always returns exactly one row, zeroed, so gp is the test.
