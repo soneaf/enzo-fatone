@@ -93,6 +93,35 @@ card says the score may be behind rather than quietly implying it is current.
 no finals and the load path returns early on the empty state; a page with a full schedule
 and no results should show the schedule, which is the most useful thing on it in October.
 
+### The calendar subscription
+
+`webcal://…/functions/v1/schedule-ics` — an edge function that serves the season as an
+`.ics` feed, linked from the Upcoming section. A **subscription**, not an export: when a
+game moves, the event moves with it, because each VEVENT keys on the game's own id.
+That is why `public_schedule` exposes `id` — an opaque UUID for a row `anon` cannot read.
+
+**JWT verification is off, and has to be** — a calendar client cannot authenticate. It is
+safe only because the function reads `public_schedule` and `public_game_log` with the
+*publishable* key, so the feed exposes exactly what the page already does and nothing more.
+If anyone ever points it at a base table or the service key, that stops being true.
+
+Finished games stay in the feed as all-day events carrying the result, so the calendar
+doubles as a season record. Upcoming games with no tip-off are all-day too — a guessed
+7pm is a time somebody drives to, the same reasoning the app uses for game-day reminders.
+
+Two things that bit during the build, both worth knowing:
+
+- **Postgres returns `tip_off` as `"19:00:00"`**, while the app stores `"19:00"`. A single
+  `replace(":", "")` strips only the first colon and produced `T1900:0000` — every timed
+  game malformed. Caught only by testing against real rows, not fabricated ones.
+- **Lines must be CRLF and folded at 75 octets.** Apple Calendar forgives neither
+  consistently and Google forgives less, which shows up as "works on my phone, empty on
+  everyone else's".
+
+Timezone is fixed at `America/New_York`. Right for Florida and Georgia; an hour out for the
+rare Central-time trip (Jackson County, TN). Deliberate — guessing per venue from an
+address would be a worse kind of wrong.
+
 ### The sheet is still there, for two things
 
 `API_URL` still points at the Google Apps Script wrapping the old sheet, and `SHEET_DATA`
