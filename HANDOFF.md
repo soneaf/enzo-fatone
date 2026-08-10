@@ -27,13 +27,15 @@ is stats only.
 (`~/Server/Developer/EnzoStats`, project `wzmtpvqbngevlcelolor`). Whitney scores a game on
 her phone; this page shows it. No export, no spreadsheet to keep tidy.
 
-It reads exactly three read-only views and nothing else:
+It reads five read-only views and nothing else:
 
 | View | Feeds |
 |---|---|
 | `public_season_totals` | the PPG / RPG / APG / FG% strip; the shooting splits and eFG%/TS% on `/stats` |
 | `public_game_log` | the season stats table, trends, per-game lines, and every table on `/stats` |
 | `public_shots` | the shot chart on both pages |
+| `public_schedule` | the Upcoming table on `/stats` |
+| `public_live_game` | the live scoreboard while a game is on |
 
 Between them they carry: a full box-score line per game, the four shooting splits,
 eFG%/TS%, and shot coordinates with the shot's value. **They carry no period breakdown,
@@ -61,6 +63,35 @@ to `anon` no matter that the public view is itself a definer view — the inner 
 policy back. **Read the base tables directly.** That is why `public_game_log` recomputes
 the box score instead of selecting from `game_box_scores`, with the counting maths copied
 across verbatim so the site and the app cannot drift.
+
+### The schedule and the live score
+
+Added 2026-08-10. They are the only two views that show anything *before* a game is over —
+everything else on the site is finished games only.
+
+`public_schedule` is every non-final game in the active season, with the venue **and the
+street address**. Steven's call, made deliberately: it is the same information schools and
+MaxPreps already publish, and a coach deciding whether to drive needs it. Worth being
+conscious that it puts a minor's location and time on an indexed page — that was weighed,
+not overlooked, and it is the reason to think twice before adding anything more personal.
+
+`public_live_game` is the in-progress game with Enzo's line derived as it goes. It
+recomputes the box score from `game_events` with the counting maths **copied verbatim from
+`public_game_log`**, for exactly the reason that one does it: `game_box_scores` is
+`security_invoker=on` and returns nothing to `anon`.
+
+**Polled, not pushed** — every 25 seconds. Realtime would mean opening websocket access to
+anonymous visitors, which is far wider exposure than a read-only view, for a number that
+moves every few minutes.
+
+The freshness line is the part worth keeping. A score that hasn't moved because nobody
+scored has to look different from one that hasn't moved because the scorer's phone lost
+signal — the same reasoning as `LinkState` in the app. After four minutes with no event the
+card says the score may be behind rather than quietly implying it is current.
+
+**The schedule renders outside `#content`**, deliberately. Before the first game there are
+no finals and the load path returns early on the empty state; a page with a full schedule
+and no results should show the schedule, which is the most useful thing on it in October.
 
 ### The sheet is still there, for two things
 
