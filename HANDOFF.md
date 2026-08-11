@@ -218,11 +218,19 @@ page looked broken from August to November every year.
 
 ## Open — for the next session
 
-### 1. Game-day reminder (app-side, not this repo)
+Nothing on this repo, which is worth stating plainly rather than leaving an empty heading.
+The site reads five public views and renders them; every open question about *what* it
+shows is a decision about which columns to expose, and those live in the EnzoStats handoff.
 
-Agreed but not built. See the EnzoStats handoff — the reasoning is that the biggest risk
-to the whole system is nobody starting the scorer, and a game that isn't scored produces
-no events, no email and no season line, with no way to recover it afterwards.
+### The one thing that would need work here
+
+A **period-by-period breakdown** was asked for and is not possible today: the public views
+carry no period data, and `game_period_scores` is `security_invoker=on`, so a public view
+over it returns nothing to `anon`. It needs a new public view — a column-exposure decision,
+and Steven's to make. Same blocker for minutes played and points-in-paint.
+
+The game-day reminder that used to sit here is **built and shipping** — see the EnzoStats
+handoff.
 
 ---
 
