@@ -368,7 +368,11 @@
         .live-score { font-size: 40px; font-weight: 900; color: #fff; line-height: 1.05; }
         .live-teams { font-size: 13px; color: #cfe3d9; margin-top: 4px; }
         .live-line { font-size: 13px; color: #ffd75e; margin-top: 10px; font-weight: 700; }
-        .live-stale { font-size: 11.5px; color: #f0a; margin-top: 8px; }
+        /* The same soft red the app uses for a stale link (Theme.danger), not the
+           hot magenta this was. It has to read as caution against dark green without
+           looking like a colour nobody chose — and it is the one line on the page whose
+           job is to be believed. */
+        .live-stale { font-size: 11.5px; color: #FFB4AB; margin-top: 8px; font-weight: 600; }
         .live-foot { font-size: 11px; color: #9fb8ae; margin-top: 8px; }
         .sub-row { display: flex; gap: 12px; align-items: center; justify-content: center;
                    flex-wrap: wrap; margin-bottom: 10px; }
