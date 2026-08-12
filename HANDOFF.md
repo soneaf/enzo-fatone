@@ -15,7 +15,7 @@ It is one self-contained HTML file per page: styles, markup and script inline. T
 deliberate for a site with no toolchain, but it means `basketball/index.html` is ~1450
 lines and the script sits at the bottom.
 
-Both stat pages read the same three database views. `basketball/index.html` is the one
+Both stat pages read the same database views. `basketball/index.html` is the one
 with the sheet integration and the film, news and schedule sections; `stats/index.html`
 is stats only.
 
@@ -27,7 +27,7 @@ is stats only.
 (`~/Server/Developer/EnzoStats`, project `wzmtpvqbngevlcelolor`). Whitney scores a game on
 her phone; this page shows it. No export, no spreadsheet to keep tidy.
 
-It reads five read-only views and nothing else:
+It reads six read-only views and nothing else:
 
 | View | Feeds |
 |---|---|
@@ -36,17 +36,17 @@ It reads five read-only views and nothing else:
 | `public_shots` | the shot chart on both pages |
 | `public_schedule` | the Upcoming table on `/stats` |
 | `public_live_game` | the live scoreboard while a game is on |
+| `public_game_periods` | the By Period section on `/stats` — added 2026-08-11 |
 
 Between them they carry: a full box-score line per game, the four shooting splits,
-eFG%/TS%, and shot coordinates with the shot's value. **They carry no period breakdown,
-no minutes played, no points-in-paint and no venue.** Those exist in the app but were not
-put in the public views, so anything needing them is a new column and therefore a
-security decision — see below.
+eFG%/TS%, shot coordinates with the shot's value, and **as of 2026-08-11** the period
+breakdown, points-in-paint, minutes played and the game's format. The venue is published
+for *upcoming* games only, through `public_schedule`.
 
 ### The security model, and why it looks the way it does
 
 The key in the page is the **publishable** key and is meant to be public. The protection
-is not the key, it is that the key can only reach those three views:
+is not the key, it is that the key can only reach those six views:
 
 - Base tables stay closed. RLS on them is authenticated-only and `anon` is granted nothing.
 - Verified by trying, with data present: reading `games`, `game_events`, `players`,
@@ -63,6 +63,14 @@ to `anon` no matter that the public view is itself a definer view — the inner 
 policy back. **Read the base tables directly.** That is why `public_game_log` recomputes
 the box score instead of selecting from `game_box_scores`, with the counting maths copied
 across verbatim so the site and the app cannot drift.
+
+**This is no longer theory.** Adding `public_game_periods` on 2026-08-11 was the first
+chance to test it, and it was tested rather than assumed: inside a transaction that rolls
+back, with a final game and eleven shots seeded, `SET LOCAL ROLE anon` sees **4 rows** from
+`public_game_periods` (built on `game_events`) and **0 rows** from `game_period_scores`
+(`security_invoker=on`) for the same game. Nothing was published and no push fired — the
+whole probe ends in a deliberate `raise exception`, which is also how the push plumbing was
+probed without retiring a real device row.
 
 ### The schedule and the live score
 
@@ -150,14 +158,17 @@ been charted.
 ## `stats/index.html` — the public season page
 
 Built for family and for recruiters who want more than a summary. Linked from the
-recruiting page by the gold "Full Season Stats" bar above the Season Stats panel. Reads
-the same three views and touches nothing else — the sheet, the YouTube feed and the
-Twitter widget are all absent, so this page has exactly three network requests:
+recruiting page by the gold "Full Season Stats" bar above the Season Stats panel. It
+touches nothing but the public views — the sheet, the YouTube feed and the Twitter widget
+are all absent, so this page makes exactly six network requests:
 
 ```
 GET public_season_totals?select=*
 GET public_game_log?select=*&order=played_on.asc
 GET public_shots?select=*&order=played_on.asc
+GET public_schedule?select=*
+GET public_live_game?select=*
+GET public_game_periods?select=*&order=played_on.asc,period.asc
 ```
 
 ### What it adds over the recruiting page
@@ -184,12 +195,29 @@ the recruiting page's collapsed panel already shows. That was accepted rather th
 avoided: the recruiting page has to stand alone for a coach who never clicks through, so
 duplicating the summary is the point of it.
 
-### Things it deliberately does not do
+### The By Period section
 
-- **No period-by-period breakdown.** It was asked for and it is not possible today: the
-  public views carry no period data, and `game_period_scores` is `security_invoker=on`, so
-  building on it returns nothing to `anon` (the trap above). It would need a new public
-  view — a security decision, and Steven's to make.
+Added 2026-08-11, from `public_game_periods`. Average points per period as bars, then a
+table with one row per game and the game column frozen.
+
+**It is Enzo's points, and it says so twice** — in the section note and in the app's
+matching screens. There is no team score per period anywhere in this system: `games` holds
+one running total, and the period column lives on `game_events`, which only ever records
+his plays. A row of numbers under a scoreboard reads as the team's line unless something
+says otherwise.
+
+Columns are driven by the deepest period anyone actually reached, so a season with no
+overtime shows no OT column and a double-overtime game adds two. Labels come from the
+game's `format`: quarters unless **every** game was played in halves, since a single header
+row over mixed formats is a lie either way. Periods with no plays are absent from the view
+rather than zero, so the table fills gaps itself — a quiet quarter is real and common, and
+treating a missing row as missing data would leave holes.
+
+The whole section, heading included, hides when there are no period rows. A finished game
+with nothing recorded against it is possible — somebody starts the scorer and nobody taps —
+and a "By Period" heading over nothing reads as a broken page rather than an empty one.
+
+### Things it deliberately does not do
 - **No `SEASON_START` date gate.** The recruiting page carries one because it inherited
   the vocabulary of a sheet that holds summer games. This page does not need it:
   `public_game_log` joins `seasons.is_active`, so it returns the 2026-27 season and
@@ -222,15 +250,9 @@ Nothing on this repo, which is worth stating plainly rather than leaving an empt
 The site reads five public views and renders them; every open question about *what* it
 shows is a decision about which columns to expose, and those live in the EnzoStats handoff.
 
-### The one thing that would need work here
-
-A **period-by-period breakdown** was asked for and is not possible today: the public views
-carry no period data, and `game_period_scores` is `security_invoker=on`, so a public view
-over it returns nothing to `anon`. It needs a new public view — a column-exposure decision,
-and Steven's to make. Same blocker for minutes played and points-in-paint.
-
-The game-day reminder that used to sit here is **built and shipping** — see the EnzoStats
-handoff.
+The period breakdown, minutes played and points-in-paint that used to sit here are all
+**shipping** — see "By Period" above and "Recent history" below. The game-day reminder is
+built and shipping too.
 
 ---
 
@@ -267,6 +289,14 @@ means adding a section, not removing a filter.**
 
 ## Recent history
 
+- **By Period added, 2026-08-11**, along with points-in-paint and minutes in the box
+  scores. Backed by a new `public_game_periods` view and four columns appended to
+  `public_game_log` (`id`, `points_in_paint`, `seconds_played`, `format`) — appended
+  because `CREATE OR REPLACE VIEW` may only add at the end and `public_season_totals` is
+  defined over it. Verified against the live views (both return `200`, empty, which is
+  correct in August), against the role-switching rollback probe described above, and
+  rendered against fabricated local data that was never committed — eight games, one of
+  them into overtime, so the OT column could be seen appearing.
 - **`stats/index.html` added** — the public season page, linked from the recruiting page.
   Verified against the live views (all three return `200`; the season is empty, which is
   correct in August) and against fabricated local data, which was never committed. Three

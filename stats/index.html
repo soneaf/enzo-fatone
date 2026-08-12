@@ -151,6 +151,29 @@
             padding: 18px;
         }
 
+        /* ── By period ── */
+        .period-shape {
+            display: flex; align-items: flex-end; justify-content: center;
+            gap: 18px; min-height: 168px;
+        }
+        .period-col { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .period-avg { font-size: 15px; font-weight: 800; color: var(--gold); }
+        .period-bar {
+            width: 42px; border-radius: 6px 6px 0 0;
+            background: linear-gradient(180deg, var(--gold), #2E8F5B);
+        }
+        .period-tag {
+            font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--muted);
+        }
+        .period-caption {
+            margin-top: 12px; text-align: center; font-size: 12px;
+            letter-spacing: .04em; color: var(--muted);
+        }
+        @media (max-width: 640px) {
+            .period-shape { gap: 10px; }
+            .period-bar { width: 30px; }
+        }
+
         /* ── Shooting splits ── */
         .split-grid {
             display: grid;
@@ -532,6 +555,22 @@
             </p>
             <div class="card" id="mix"></div>
 
+            <!-- Hidden as a whole, heading included. A finished game with no plays
+                 recorded against it is possible — somebody starts the scorer and nobody
+                 taps — and a "By Period" heading over nothing reads as a broken page
+                 rather than an empty one. -->
+            <div id="periods-section" style="display:none;">
+                <h2 class="section-header">By Period</h2>
+                <p class="section-note">
+                    <strong>Enzo's</strong> points quarter by quarter &mdash; not the team's.
+                    The tracker records his plays against the period they happened in, so this
+                    is his scoring shape through a game: whether he starts fast, and whether
+                    he is still scoring in the fourth.
+                </p>
+                <div class="card" id="period-shape"></div>
+                <div class="table-wrap"><table class="stats-table log-table" id="periods"></table></div>
+            </div>
+
             <h2 class="section-header">Game Log</h2>
             <p class="section-note">
                 One row per game, with the totals and per-game averages underneath. Scroll
@@ -573,8 +612,8 @@
         // this page shows it — there is no export step and no spreadsheet in between.
         //
         // The key below is the *publishable* key and is meant to be public. The
-        // protection is not the key, it is that the key reaches exactly three read-only
-        // views and nothing else: the base tables are closed to it. Adding a fourth view
+        // protection is not the key, it is that the key reaches exactly six read-only
+        // views and nothing else: the base tables are closed to it. Adding a seventh view
         // or a column to an existing one is a security decision, not a rendering one —
         // see HANDOFF.md before reaching for one.
         const SB_URL = 'https://wzmtpvqbngevlcelolor.supabase.co/rest/v1';
@@ -808,6 +847,118 @@
             document.getElementById('log').innerHTML = html;
         }
 
+        // ── By period ──
+        //
+        // `public_game_periods` gives one row per game per period that had an event in it.
+        // Periods with no plays are simply absent, so everything below fills gaps with 0
+        // rather than assuming four rows a game — a quiet quarter is a real and common
+        // thing, and treating a missing row as missing data would leave holes in a table
+        // whose whole point is the shape.
+        //
+        // It carries HIS points only. There is no team score per period anywhere in this
+        // system: `games` holds one running total, and the period column lives on
+        // `game_events`, which only ever records Enzo's plays. A row of numbers under a
+        // scoreboard reads as the team's line unless it says otherwise, so it says so.
+        function periodsByGame(periodRows) {
+            const map = new Map();
+            periodRows.forEach(r => {
+                if (!map.has(r.game_id)) map.set(r.game_id, new Map());
+                map.get(r.game_id).set(Number(r.period), Number(r.points) || 0);
+            });
+            return map;
+        }
+
+        // "Q3" / "H2" / "OT" / "OT2", the same rule `Period.shortLabel` uses in the app —
+        // regulation length is a property of the format, so a game played in halves can
+        // never have its second half labelled a quarter.
+        function periodTag(period, format) {
+            const regulation = format === 'halves' ? 2 : 4;
+            if (period > regulation) {
+                const ot = period - regulation;
+                return ot === 1 ? 'OT' : `OT${ot}`;
+            }
+            return (format === 'halves' ? 'H' : 'Q') + period;
+        }
+
+        function renderPeriods(games, periodRows) {
+            const section = document.getElementById('periods');
+            const shape = document.getElementById('period-shape');
+            const byGame = periodsByGame(periodRows);
+            if (!periodRows.length) {
+                shape.innerHTML = '';
+                section.innerHTML = '';
+                return;
+            }
+            document.getElementById('periods-section').style.display = 'block';
+
+            // How many columns the table needs. Driven by the deepest period anyone
+            // actually reached, so a season with no overtime shows no OT column and a
+            // double-overtime game adds two.
+            const deepest = Math.max(...periodRows.map(r => Number(r.period) || 1));
+            // Halves only if EVERY game was played in halves. Mixed formats would make a
+            // single header row a lie either way, and quarters is the NFHS default.
+            const format = games.length && games.every(g => g.format === 'halves')
+                ? 'halves' : 'quarters';
+            const periods = Array.from({ length: deepest }, (_, i) => i + 1);
+
+            const cols = [
+                { h: 'Game', v: g => `${shortDate(g.played_on)} ${esc(oppLabel(g))}` },
+                ...periods.map(p => ({
+                    h: periodTag(p, format),
+                    v: g => (byGame.get(g.id)?.get(p) ?? 0),
+                    p,
+                })),
+                { h: 'PTS', v: g => g.points || 0 },
+            ];
+
+            let html = '<thead><tr>' + cols.map(c => `<th>${c.h}</th>`).join('') + '</tr></thead><tbody>';
+            games.forEach(g => {
+                html += '<tr>' + cols.map(c => `<td>${c.v(g)}</td>`).join('') + '</tr>';
+            });
+            // Totals sum the column; the average row divides by games played. Both are
+            // arithmetic on counts, so neither can repeat the averaged-percentage error
+            // the rest of this page exists to avoid.
+            const totalFor = (p) => games.reduce((a, g) => a + (byGame.get(g.id)?.get(p) ?? 0), 0);
+            const gp = games.length;
+            html += '</tbody><tfoot><tr><td>Total</td>' +
+                periods.map(p => `<td>${totalFor(p)}</td>`).join('') +
+                `<td>${sum(games, 'points')}</td></tr>` +
+                `<tr class="avg-row"><td>Per game (${gp})</td>` +
+                periods.map(p => `<td>${avg(totalFor(p), gp)}</td>`).join('') +
+                `<td>${avg(sum(games, 'points'), gp)}</td></tr></tfoot>`;
+            section.innerHTML = html;
+
+            // The season shape, which is the part a coach actually reads: average points
+            // in each period, as bars. One number per period beats twenty rows of a table
+            // for the question "does he disappear in the second half".
+            const peak = Math.max(1, ...periods.map(p => totalFor(p) / Math.max(gp, 1)));
+            shape.style.display = 'block';
+            shape.innerHTML =
+                '<div class="period-shape">' +
+                periods.map(p => {
+                    const average = totalFor(p) / Math.max(gp, 1);
+                    const height = Math.max(4, Math.round((average / peak) * 120));
+                    return `<div class="period-col">
+                              <div class="period-avg">${average.toFixed(1)}</div>
+                              <div class="period-bar" style="height:${height}px"></div>
+                              <div class="period-tag">${periodTag(p, format)}</div>
+                            </div>`;
+                }).join('') +
+                '</div><div class="period-caption">Average points per period</div>';
+        }
+
+        // Minutes played, and only when they were actually kept.
+        //
+        // `seconds_played` is non-zero only if the scorer ran the stopwatch rather than
+        // the game clock, which is a per-device setting nobody thinks about mid-game. Zero
+        // means "not tracked", not "did not play" — so it renders nothing at all rather
+        // than "0 min" beside a thirty-point night.
+        function minutesLabel(g) {
+            const seconds = Number(g.seconds_played) || 0;
+            if (seconds < 60) return '';
+            return `<span>Minutes <b>${Math.round(seconds / 60)}</b></span>`;
+        }
+
         function renderBoxes(games) {
             // Newest first — the game people came to read about is the last one played.
             const ordered = games.slice().reverse();
@@ -842,6 +993,9 @@
                             <span>FT <b>${g.ftm || 0}-${g.fta || 0}</b> (${rate(g.ftm, g.fta)})</span>
                             <span>eFG% <b>${efg}</b></span>
                             <span>TS% <b>${ts}</b></span>
+                            ${(g.points_in_paint || 0) > 0
+                                ? `<span>In the paint <b>${g.points_in_paint}</b></span>` : ''}
+                            ${minutesLabel(g)}
                         </div>
                     </div>
                 </details>`;
@@ -1017,14 +1171,15 @@
             const show = (id) => { document.getElementById(id).style.display = 'block'; };
             const hide = (id) => { document.getElementById(id).style.display = 'none'; };
             try {
-                // Three requests, and only these three. The game log is ordered oldest
-                // first so the charts read left-to-right through the season.
-                const [totalsRows, games, shots, schedule, live] = await Promise.all([
+                // Six requests, and only these six. The game log is ordered oldest first
+                // so the charts read left-to-right through the season.
+                const [totalsRows, games, shots, schedule, live, periodRows] = await Promise.all([
                     sb('public_season_totals'),
                     sb('public_game_log', '&order=played_on.asc'),
                     sb('public_shots', '&order=played_on.asc'),
                     sb('public_schedule'),
                     sb('public_live_game'),
+                    sb('public_game_periods', '&order=played_on.asc,period.asc'),
                 ]);
 
                 const t = totalsRows[0];
@@ -1044,6 +1199,7 @@
                 renderSplits(t);
                 renderTotals(t, games);
                 renderMix(games);
+                renderPeriods(games, periodRows);
                 renderLog(games, t);
                 renderBoxes(games);
                 renderShots(shots, games);
